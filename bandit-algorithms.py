@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.random.seed(1)
+np.random.seed(777) # 🎰
 
 # Set number of bandits k, trial number N, and exploration threshold ε
 k = 3
@@ -21,28 +21,35 @@ def get_reward(arm):
     a, b = bandits[arm]
     return np.random.normal(a,b)
 
-#-------------#
-# Random agent
-#-------------#
+#---------------------------------------#
+# LinUCB (upper confidence bound) agent
+#---------------------------------------#
 
-arm1_scores = [0]
-arm2_scores = [0]
-arm3_scores = [0]
+arm_counts = [0 for i in range(k)]
+arm_EV = [0 for i in range(k)]
+lin_ucb = [0]
+lin_ucb_rewards = []
 
+# Selects arm with highest predicted reward + confidence, adapting to context to optimize decisions over time
 for i in range(N):
-    arm1_scores.append(get_reward(0) + arm1_scores[-1])
-    arm2_scores.append(get_reward(1) + arm2_scores[-1])
-    arm3_scores.append(get_reward(2) + arm3_scores[-1])
-
-random_arm = [0]
-random_rewards = []
-
-for i in range(N):
-    # At each trial, select a random arm
-    arm = np.random.randint(0, k)
-    reward = get_reward(arm)
-    random_rewards.append(reward)
-    random_arm.append(reward + random_arm[-1])
+    ucb_values = []
+    # Calculate expected value and confidence interval for each arm to define upper confidence bound
+    for arm in range(k):
+        if arm_counts[arm] > 0:
+            EV = arm_EV[arm]
+            confidence = np.sqrt(2 * np.log(i)) / arm_counts[arm]
+            ucb_value = EV + confidence
+        else:
+            # Ensure that each arm is explored at least once
+            ucb_value = np.inf
+        ucb_values.append(ucb_value)
+    # Select arm with highest UCB value
+    chosen_arm = np.argmax(ucb_values)
+    reward = get_reward(chosen_arm)
+    lin_ucb_rewards.append(reward)
+    lin_ucb.append(reward + lin_ucb[-1])
+    arm_counts[chosen_arm] += 1
+    arm_EV[chosen_arm] = ((arm_counts[chosen_arm] - 1) * arm_EV[chosen_arm] + reward) / arm_counts[chosen_arm]
 
 #---------------#
 # ε-first agent
@@ -52,7 +59,7 @@ epsilon_first = [0]
 arm_history = {arm_index: [] for arm_index in range(len(bandits))}
 first_rewards = []
 
-# Two-phase strategy: randomly explore for εN trials, then exploit best arm for the rest
+# Two-phase strategy: randomly explore for the first εN trials, then exploit best arm for the rest
 for i in range(N):
     # Exploration phase: select a random arm
     if i < (epsilon * N):
@@ -119,7 +126,7 @@ epsilon_start = 1.0
 epsilon_min = 0.01
 decay_rate = 0.99
 
-# Epsilon decreases over time: starts exploring more frequently, gradually shifts to exploiting best arm
+# Epsilon decreases over time: starts by exploring frequently, gradually shifts to exploiting best arm
 for i in range(N):
     # Calculate exploration rate epsilon for current trial
     epsilon = max(epsilon_min, epsilon_start * (decay_rate**i))
@@ -144,36 +151,30 @@ for i in range(N):
     decreasing_rewards.append(reward)
     decreasing_arm_history[arm].append(reward)
     epsilon_decreasing.append(reward + epsilon_decreasing[-1])
+    
+#-------------#
+# Random agent
+#-------------#
 
-#------------------------------------#
-# LinUCB (upper confidence bound) agent
-#------------------------------------#
+# For k = 3 case, but can be adjusted
+arm1_scores = [0]
+arm2_scores = [0]
+arm3_scores = [0]
 
-arm_counts = [0 for i in range(k)]
-arm_EV = [0 for i in range(k)]
-lin_ucb = [0]
-lin_ucb_rewards = []
-
-# Selects arm with highest predicted reward + confidence, adapting to context to optimize decisions over time
 for i in range(N):
-    ucb_values = []
-    # Calculate expected value and confidence interval for each arm to define upper confidence bound
-    for arm in range(k):
-        if arm_counts[arm] > 0:
-            EV = arm_EV[arm]
-            confidence = np.sqrt(2 * np.log(i)) / arm_counts[arm]
-            ucb_value = EV + confidence
-        else:
-            # Ensure that each arm is explored at least once
-            ucb_value = np.inf
-        ucb_values.append(ucb_value)
-    # Select arm with highest UCB value
-    chosen_arm = np.argmax(ucb_values)
-    reward = get_reward(chosen_arm)
-    lin_ucb_rewards.append(reward)
-    lin_ucb.append(reward + lin_ucb[-1])
-    arm_counts[chosen_arm] += 1
-    arm_EV[chosen_arm] = ((arm_counts[chosen_arm] - 1) * arm_EV[chosen_arm] + reward) / arm_counts[chosen_arm]
+    arm1_scores.append(get_reward(0) + arm1_scores[-1])
+    arm2_scores.append(get_reward(1) + arm2_scores[-1])
+    arm3_scores.append(get_reward(2) + arm3_scores[-1])
+
+random_arm = [0]
+random_rewards = []
+
+for i in range(N):
+    # At each trial, select a random arm
+    arm = np.random.randint(0, k)
+    reward = get_reward(arm)
+    random_rewards.append(reward)
+    random_arm.append(reward + random_arm[-1])
 
 #-------------------------------#
 # Evaluating agent performances
