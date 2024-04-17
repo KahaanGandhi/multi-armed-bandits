@@ -5,12 +5,21 @@ import seaborn as sns
 import os
 import sys
 
+#-----------------#
+# Directory setup
+#-----------------#
+
+# Establish base directory relative to current script location
 script_location = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 base_directory = os.path.normpath(os.path.join(script_location, '..', 'netflix-recommendations'))
 if not os.path.isdir(base_directory):
     raise Exception(f"The directory {base_directory} does not exist.")
 if base_directory not in sys.path:
     sys.path.append(base_directory)
+
+#------------------------#
+# Local imports and data 
+#------------------------#
 
 from data_loader import load_subset
 from agents import EpsilonGreedyAgent, EpsilonFirstAgent, LinUCBAgent
@@ -19,13 +28,17 @@ from environments import GenreEnjoyerEnvironment
 data_path = "/Users/kahaan/Desktop/multi-armed-bandits/netflix-recommendations/data/"
 subset = load_subset(data_path)
 
+#-------------------------------#
+# Preprocess genres and ratings
+#-------------------------------#
+
 # Split genres into lists and expand each genre into seprate row
 subset['Genres'] = subset['Genres'].str.split('|') 
 df_exploded = subset.explode('Genres') 
 unique_genres = df_exploded.Genres.unique()
 genres = df_exploded["Genres"].unique().tolist()
 
-# Process genre-specific rating distributions before passing to enviornments
+# Process genre-specific rating distributions before passing to environments
 unnormalized_distributions = {}
 for genre in genres:
     subset = list(df_exploded[df_exploded["Genres"] == genre]["Rating"])
@@ -33,28 +46,63 @@ for genre in genres:
     for rating in range(1,6):
         rating_counts[rating] = subset.count(rating)
     unnormalized_distributions[genre] = rating_counts
-    
-np.random.seed(777)
 
-viewer1 = GenreEnjoyerEnvironment(genres, unnormalized_distributions, 1)
-viewer1.plot_distributions()
+#----------------#
+# Run simulation 
+#----------------#
 
-agent1 = EpsilonFirstAgent(genres, 10000, epsilon=0.1, environment=viewer1)
-agent1.run()
-agent1.analyze(plot_option="both")
+# Define step number and (optional) random seed
+# np.random.seed(777)
+N = 1000
 
-np.random.seed(7)
+user = GenreEnjoyerEnvironment(genres, unnormalized_distributions, 1)
 
-viewer2 = GenreEnjoyerEnvironment(genres, unnormalized_distributions, 2)
-viewer2.plot_distributions()
+agent1 = EpsilonFirstAgent(genres, N, epsilon=0.1, environment=user)
+agent2 = EpsilonGreedyAgent(genres, N, epsilon=0.1, environment=user)
+agent3 = LinUCBAgent(genres, N, environment=user)
 
-agent2 = EpsilonGreedyAgent(genres, 10000, epsilon=0.1, environment=viewer2)
-agent2.run()
-agent2.analyze(plot_option="both")
+rewards1 = agent1.run()
+rewards2 = agent2.run()
+rewards3 = agent3.run()
 
-viewer3 = GenreEnjoyerEnvironment(genres, unnormalized_distributions, 3)
-viewer3.plot_distributions()
+#-------------------------------#
+# Evaluating agent performances
+#-------------------------------#
 
-agent3 = LinUCBAgent(genres, 10000, environment=viewer3)
-agent3.run()
-agent3.analyze(plot_option="both")
+# user.plot_distributions()
+# agent1.analyze(plot_option="both")
+# agent2.analyze(plot_option="both")
+# agent3.analyze(plot_option="both")
+
+# Helper function to calculate rolling average and cumulative average
+def analyze_rewards(rewards, N):
+    rewards = np.array(rewards)
+    rolling_avg = pd.Series(rewards).rolling(window=max(10, int(N * 0.08))).mean()
+    cumulative_avg = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)
+    return rolling_avg, cumulative_avg
+
+rolling_avg1, cumulative_avg1 = analyze_rewards(rewards1, N)
+rolling_avg2, cumulative_avg2 = analyze_rewards(rewards2, N)
+rolling_avg3, cumulative_avg3 = analyze_rewards(rewards3, N)
+
+# Plot rolling window average...
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 7))
+axes[0].plot(rolling_avg1, label='ε-First', color='maroon')
+axes[0].plot(rolling_avg2, label='ε-Greedy', color='steelblue')
+axes[0].plot(rolling_avg3, label='LinUCB', color='darkviolet')
+axes[0].set_title('Rolling Window Average Reward')
+axes[0].set_xlabel('Step')
+axes[0].set_ylabel('Average Rating')
+axes[0].legend()
+
+# and cumulative average reward
+axes[1].plot(cumulative_avg1, label='ε-First', color='maroon')
+axes[1].plot(cumulative_avg2, label='ε-Greedy', color='steelblue')
+axes[1].plot(cumulative_avg3, label='LinUCB', color='darkviolet')
+axes[1].set_title('Cumulative Average Reward')
+axes[1].set_xlabel('Step')
+axes[1].set_ylabel('Average Rating')
+axes[1].legend()
+
+plt.tight_layout()
+plt.show()

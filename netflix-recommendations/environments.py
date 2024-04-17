@@ -1,6 +1,5 @@
 import sys
 sys.path.append("../")
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,15 +7,17 @@ import seaborn as sns
 import os
 from data_loader import load_subset
 
-data_path = "/Users/kahaan/Desktop/multi-armed-bandits/netflix-recommendations/data/"
+#--------------------------#
+# Load and preprocess data
+#--------------------------#
 
+data_path = "/Users/kahaan/Desktop/multi-armed-bandits/netflix-recommendations/data/"
 subset = load_subset(data_path)
 
 # Split genres into lists and expand each genre into seprate row
 subset['Genres'] = subset['Genres'].str.split('|') 
 df_exploded = subset.explode('Genres') 
 unique_genres = df_exploded.Genres.unique()
-
 genres = df_exploded["Genres"].unique().tolist()
 
 unnormalized_distributions = {}
@@ -27,6 +28,9 @@ for genre in genres:
         rating_counts[rating] = subset.count(rating)
     unnormalized_distributions[genre] = rating_counts
     
+#--------------------------------------------------------#
+# Genre enjoyer: biases ratings towards a favorite genre
+#--------------------------------------------------------#
 
 class GenreEnjoyerEnvironment:
     def __init__(self, genre_list, unnormalized_distributions, user_id):
@@ -45,14 +49,12 @@ class GenreEnjoyerEnvironment:
                 bias_factor = 5
                 rating_counts[4] *= bias_factor
                 rating_counts[5] *= bias_factor
-
             # Normalize counts to create a probability distribution
             total_counts = sum(rating_counts.values())
             normalized_counts = {}
             for rating, count in rating_counts.items():
                 normalized_counts[rating] = count / total_counts
             normalized_distributions[genre] = normalized_counts
-        
         return normalized_distributions
     
     # Sample for reward distribution for selected genre
@@ -66,7 +68,7 @@ class GenreEnjoyerEnvironment:
     def plot_distributions(self):
         plt.figure(figsize=(14, 8))
         colors = plt.cm.viridis(np.linspace(0, 1, len(self.genre_list)))
-        
+        # Iterate through colors, with emphasis on the favorite 
         for genre, color in zip(self.genre_list, colors):
             if genre in self.reward_distributions:
                 ratings = list(self.reward_distributions[genre].keys())
@@ -75,7 +77,6 @@ class GenreEnjoyerEnvironment:
                     plt.plot(ratings, probabilities, '-o', label=genre + " (Fav)", color="red")
                 else:
                     plt.plot(ratings, probabilities, '-o', label=genre, color=color)
-        
         plt.title('Normalized Rating Distribution for Genre Enjoyer')
         plt.xlabel('Rating')
         plt.ylabel('Proportion')

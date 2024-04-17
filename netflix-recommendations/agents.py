@@ -9,14 +9,12 @@ import os
 from data_loader import load_subset
 
 data_path = "/Users/kahaan/Desktop/multi-armed-bandits/netflix-recommendations/data/"
-
 subset = load_subset(data_path)
 
 # Split genres into lists and expand each genre into seprate row
 subset['Genres'] = subset['Genres'].str.split('|') 
 df_exploded = subset.explode('Genres') 
 unique_genres = df_exploded.Genres.unique()
-
 genres = df_exploded["Genres"].unique().tolist()
 
 unnormalized_distributions = {}
@@ -27,6 +25,9 @@ for genre in genres:
         rating_counts[rating] = subset.count(rating)
     unnormalized_distributions[genre] = rating_counts
 
+#---------------------------------------#
+# LinUCB (upper confidence bound) agent
+#---------------------------------------#
 
 class LinUCBAgent:
     def __init__(self, genre_list, steps, environment=None):
@@ -41,38 +42,38 @@ class LinUCBAgent:
         self.recent_rewards = []
         self.arm_history = {arm_index: [] for arm_index in range(self.k)}
 
-        
     def run(self):
         rewards = []
+        # Selects arm with highest predicted reward + confidence, adapting to context to optimize decisions over time
         for i in range(self.N):
             ucb_values = []
-            
+            # Calculate expected value and confidence interval for each arm to define upper confidence bound
             for arm in range(self.k):
                 if self.arm_counts[arm] > 0:
                     EV = self.arm_EV[arm]
                     confidence = np.sqrt(2 * np.log(i)) / self.arm_counts[arm]
                     ucb_value = EV + confidence
                 else:
+                    # Ensure that each arm is explored at least once
                     ucb_value = np.inf
                 ucb_values.append(ucb_value)
-                
+            # Select arm with highest UCB value...    
             chosen_arm = np.argmax(ucb_values)
             reward = self.environment.get_reward(chosen_arm)
             self.arm_history[chosen_arm].append(reward)
             rewards.append(reward)
             self.arm_counts[chosen_arm] += 1
-            
+            # and update the corresponding EV
             old_EV = self.arm_EV[chosen_arm]
             n = self.arm_counts[chosen_arm]
             self.arm_EV[chosen_arm] = (old_EV * (n - 1) + reward) / n
-            
         self.recent_rewards = rewards 
         return rewards    
 
     
     # Generate plots and diagnostics to evaluate agent performance 
     def analyze(self, rewards=None, plot_option="both"):
-        # Prepare Data
+        # Prepare data
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
@@ -105,12 +106,12 @@ class LinUCBAgent:
             plt.legend()
             plt.show()
 
+#---------------#
+# ε-first agent
+#---------------#
 
 class EpsilonFirstAgent:
     def __init__(self, genre_list, steps, epsilon=0.1, environment=None):
-        
-        # TODO: ADD A WAY TO RESET
-        
         self.genre_list = genre_list
         
         # K-armed bandit problem: genres as arms and user as environment
@@ -144,7 +145,7 @@ class EpsilonFirstAgent:
     
     # Generate plots and diagnostics to evaluate agent performance 
     def analyze(self, rewards=None, plot_option="both"):
-        # Prepare Data
+        # Prepare data
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
@@ -177,6 +178,9 @@ class EpsilonFirstAgent:
             plt.legend()
             plt.show()
             
+#----------------#
+# ε-greedy agent
+#----------------#
 
 class EpsilonGreedyAgent:
     def __init__(self, genre_list, steps, epsilon=0.1, environment=None):
@@ -203,11 +207,9 @@ class EpsilonGreedyAgent:
             else:
                 # If exploitation chosen, select arm with highest expected value
                 arm = np.argmax(self.arm_EV)
-            
             # Get the reward...
             reward = self.environment.get_reward(arm)
             rewards.append(reward)
-            
             # and update the respective EVs
             n = self.arm_counts[arm] + 1
             self.arm_counts[arm] = n
@@ -215,13 +217,12 @@ class EpsilonGreedyAgent:
             new_EV = current_EV + (reward - current_EV) / n
             self.arm_EV[arm] = new_EV
             self.arm_history[arm].append(reward)
-            
         self.recent_rewards = rewards  
         return rewards
     
     # Generate plots and diagnostics to evaluate agent performance 
     def analyze(self, rewards=None, plot_option="both"):
-        # Prepare Data
+        # Prepare data
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
@@ -242,7 +243,7 @@ class EpsilonGreedyAgent:
         
         if plot_option in ["both", "trends"]:
             # 2. Plot cumulative average reeward and sliding window average
-            window_size = 200  
+            window_size = max(10, int(self.N * 0.02))  
             rolling_avg = pd.Series(rewards).rolling(window=window_size).mean()
             cumulative_average = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)
             plt.figure(figsize=(14, 7))
