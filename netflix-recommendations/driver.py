@@ -13,7 +13,7 @@ if base_directory not in sys.path:
     sys.path.append(base_directory)
 
 from data_loader import load_subset
-from agents import EpsilonGreedyAgent, EpsilonFirstAgent
+from agents import EpsilonGreedyAgent, EpsilonFirstAgent, LinUCBAgent
 from environments import GenreEnjoyerEnvironment
 
 data_path = "/Users/kahaan/Desktop/multi-armed-bandits/netflix-recommendations/data/"
@@ -51,3 +51,10 @@ viewer2.plot_distributions()
 agent2 = EpsilonGreedyAgent(genres, 10000, epsilon=0.1, environment=viewer2)
 agent2.run()
 agent2.analyze(plot_option="both")
+
+viewer3 = GenreEnjoyerEnvironment(genres, unnormalized_distributions, 3)
+viewer3.plot_distributions()
+
+agent3 = LinUCBAgent(genres, 10000, environment=viewer3)
+agent3.run()
+agent3.analyze(plot_option="both")
