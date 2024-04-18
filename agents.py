@@ -84,6 +84,76 @@ class LinUCBAgent:
             plt.legend()
             plt.show()
 
+#--------------------#
+# ε-decreasing agent
+#--------------------#
+
+class EpsilonDecreasingAgent:
+    def __init__(self, genre_list, steps, environment=None):
+        self.genre_list = genre_list
+        self.k = len(genre_list)
+        self.N = steps
+        self.initial_epsilon = 0.99  # Starting epsilon near 1 for maximum initial exploration
+        self.minimum_epsilon = 0.01  # Minimum epsilon to maintain some exploration
+        self.environment = environment
+        self.arm_history = {arm_index: [] for arm_index in range(self.k)}
+        self.arm_EV = [0] * self.k
+        self.arm_counts = [0] * self.k
+        self.recent_rewards = []
+        
+    def run(self):
+        rewards = []
+        for i in range(self.N):
+            # Exponential decay of epsilon or linear decay to minimum_epsilon
+            current_epsilon = max(self.initial_epsilon * np.exp(-i / (self.N / 5)), self.minimum_epsilon)
+            p = np.random.random()
+            if p < current_epsilon:
+                # Explore: choose a random arm
+                arm = np.random.randint(0, self.k)
+            else:
+                # Exploit: choose the best known arm
+                arm = np.argmax(self.arm_EV) 
+            reward = self.environment.get_reward(arm)
+            rewards.append(reward)
+            # Update the arm's expected value (EV) and history
+            n = self.arm_counts[arm] + 1
+            self.arm_counts[arm] = n
+            current_EV = self.arm_EV[arm]
+            new_EV = current_EV + (reward - current_EV) / n
+            self.arm_EV[arm] = new_EV
+            self.arm_history[arm].append(reward)
+        self.recent_rewards = rewards  
+        return rewards
+    
+    def analyze(self, rewards=None, plot_option="both"):
+        rewards = np.array(self.recent_rewards) if rewards is None else np.array(rewards)
+        genres = np.array(self.genre_list)
+        colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
+        if plot_option in ["both", "posterior"]:
+            plt.figure(figsize=(14, 7))
+            for idx, genre in enumerate(genres):
+                data = self.arm_history[idx]
+                if len(set(data)) > 1: 
+                    sns.kdeplot(data, label=f'{genre}', color=colors[idx])
+                else:
+                    if data:
+                        plt.axvline(x=data[0], label=f'{genre} (single value)', color=colors[idx], linestyle='--')
+            plt.title('ε-decreasing: Learned Posterior Distribution by Genre')
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+            plt.show()
+        if plot_option in ["both", "trends"]:
+            window_size = max(10, int(self.N * 0.02))  
+            rolling_avg = pd.Series(rewards).rolling(window=window_size).mean()
+            cumulative_average = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)
+            plt.figure(figsize=(14, 7))
+            plt.plot(cumulative_average, label='Cumulative Average Reward', color='maroon', linestyle='--')
+            plt.plot(rolling_avg, label=f'Rolling Average Reward (window size={window_size})', color='darkblue')
+            plt.xlabel('Step')
+            plt.ylabel('Reward')
+            plt.title('ε-decreasing: Reward Trends Over Time')
+            plt.legend()
+            plt.show()
+
 #---------------#
 # ε-first agent
 #---------------#
@@ -99,7 +169,7 @@ class EpsilonFirstAgent:
         self.environment = environment
         self.arm_history = {arm_index: [] for arm_index in range(self.k)}
         self.recent_rewards = []
-        
+
     def run(self):
         rewards = []
         # Two-phase strategy: randomly explore for the first εN trials, then exploit best arm for the rest
