@@ -48,7 +48,13 @@ class LinUCBAgent:
         self.recent_rewards = rewards 
         return rewards    
 
-    
+    # Clear history and statistics to start a new run
+    def reset(self):
+        self.arm_EV = [0] * self.k
+        self.arm_counts = [0] * self.k
+        self.recent_rewards = []
+        self.arm_history = {arm_index: [] for arm_index in range(self.k)}
+        
     # Generate plots and diagnostics to evaluate agent performance 
     def analyze(self, rewards=None, plot_option="both"):
         # Prepare data
@@ -104,7 +110,7 @@ class EpsilonDecreasingAgent:
     def run(self):
         rewards = []
         for i in range(self.N):
-            # Exponential decay of epsilon or linear decay to minimum_epsilon
+            # Exponential decay of epsilon 
             current_epsilon = max(self.initial_epsilon * np.exp(-i / (self.N / 5)), self.minimum_epsilon)
             p = np.random.random()
             if p < current_epsilon:
@@ -124,7 +130,15 @@ class EpsilonDecreasingAgent:
             self.arm_history[arm].append(reward)
         self.recent_rewards = rewards  
         return rewards
-    
+
+    # Clear history and statistics to start a new run
+    def reset(self):
+        self.arm_EV = [0] * self.k
+        self.arm_counts = [0] * self.k
+        self.recent_rewards = []
+        self.arm_history = {arm_index: [] for arm_index in range(self.k)}
+
+    # Generate plots and diagnostics to evaluate agent performance 
     def analyze(self, rewards=None, plot_option="both"):
         rewards = np.array(self.recent_rewards) if rewards is None else np.array(rewards)
         genres = np.array(self.genre_list)
@@ -190,6 +204,13 @@ class EpsilonFirstAgent:
             rewards.append(reward)
         self.recent_rewards = rewards  
         return rewards
+    
+    # Clear history and statistics to start a new run
+    def reset(self):
+        self.arm_EV = [0] * self.k
+        self.arm_counts = [0] * self.k
+        self.recent_rewards = []
+        self.arm_history = {arm_index: [] for arm_index in range(self.k)}
     
     # Generate plots and diagnostics to evaluate agent performance 
     def analyze(self, rewards=None, plot_option="both"):
@@ -267,6 +288,13 @@ class EpsilonGreedyAgent:
             self.arm_history[arm].append(reward)
         self.recent_rewards = rewards  
         return rewards
+    
+    # Clear history and statistics to start a new run
+    def reset(self):
+        self.arm_EV = [0] * self.k
+        self.arm_counts = [0] * self.k
+        self.recent_rewards = []
+        self.arm_history = {arm_index: [] for arm_index in range(self.k)}
     
     # Generate plots and diagnostics to evaluate agent performance 
     def analyze(self, rewards=None, plot_option="both"):

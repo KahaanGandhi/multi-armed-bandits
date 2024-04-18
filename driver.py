@@ -56,14 +56,14 @@ niche_genres = movies_per_genre[movies_per_genre <= threshold_movies].index.toli
 #----------------#
 
 # Define step number and (optional) random seed
-np.random.seed(777)
-N = 1000
+# np.random.seed(777)
+N = 10000
 
-user1 = MultipleGenreEnjoyerEnvironment(genres, unnormalized_distributions, 1)
+user5 = MultipleGenreEnjoyerEnvironment(genres, unnormalized_distributions, 1)
 user2 = GenreEnjoyerEnvironment(genres, unnormalized_distributions, 2)
 user3 = MultipleNicheGenreLoyalistEnvironment(genres, niche_genres, unnormalized_distributions, 3)
 user4 = NicheGenreLoyalistEnvironment(genres, niche_genres, unnormalized_distributions, 4)
-user5 = AverageViewerEnvironment(genres, unnormalized_distributions, 5)
+user1 = AverageViewerEnvironment(genres, unnormalized_distributions, 5)
 
 user = user1
 

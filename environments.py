@@ -22,6 +22,11 @@ class GenreEnjoyerEnvironment:
                 bias_factor = 5
                 rating_counts[4] *= bias_factor
                 rating_counts[5] *= bias_factor
+            # Generate and add noise, ensuring non-negative counts
+            for rating in rating_counts:
+                noise = np.random.normal(0, 0.5) 
+                adjusted_count = rating_counts[rating] + noise  
+                rating_counts[rating] = max(int(adjusted_count), 0)
             # Normalize counts to create a probability distribution
             total_counts = sum(rating_counts.values())
             normalized_counts = {}
@@ -82,6 +87,11 @@ class NicheGenreLoyalistEnvironment:
                 nerf_factor = 0.7
                 rating_counts[4] = int(rating_counts[4] * nerf_factor)
                 rating_counts[5] = int(rating_counts[5] * nerf_factor)
+            # Generate and add noise, ensuring non-negative counts
+            for rating in rating_counts:
+                noise = np.random.normal(0, 0.5) 
+                adjusted_count = rating_counts[rating] + noise  
+                rating_counts[rating] = max(int(adjusted_count), 0)
             # Normalize counts to create a probability distribution
             total_counts = sum(rating_counts.values())
             normalized_counts = {}
@@ -139,6 +149,11 @@ class MultipleGenreEnjoyerEnvironment:
                 bias_factor = 5
                 rating_counts[4] *= bias_factor
                 rating_counts[5] *= bias_factor
+            # Generate and add noise, ensuring non-negative counts
+            for rating in rating_counts:
+                noise = np.random.normal(0, 0.5) 
+                adjusted_count = rating_counts[rating] + noise  
+                rating_counts[rating] = max(int(adjusted_count), 0)
             # Normalize counts to create a probability distribution
             total_counts = sum(rating_counts.values())
             normalized_counts = {}
@@ -199,6 +214,11 @@ class MultipleNicheGenreLoyalistEnvironment:
                 nerf_factor = 0.6
                 rating_counts[4] = int(rating_counts[4] * nerf_factor)
                 rating_counts[5] = int(rating_counts[5] * nerf_factor)
+            # Generate and add noise, ensuring non-negative counts
+            for rating in rating_counts:
+                noise = np.random.normal(0, 0.5) 
+                adjusted_count = rating_counts[rating] + noise  
+                rating_counts[rating] = max(int(adjusted_count), 0)
             # Normalize counts to create a probability distribution
             total_counts = sum(rating_counts.values())
             normalized_counts = {}
@@ -250,6 +270,11 @@ class AverageViewerEnvironment:
         normalized_distributions = {}
         for genre in self.genre_list:
             rating_counts = unnormalized_distributions[genre].copy()
+            # Generate and add noise, ensuring non-negative counts
+            for rating in rating_counts:
+                noise = np.random.normal(0, 0.5) 
+                adjusted_count = rating_counts[rating] + noise  
+                rating_counts[rating] = max(int(adjusted_count), 0)
             # Normalize counts to create a probability distribution
             total_counts = sum(rating_counts.values())
             normalized_counts = {}
