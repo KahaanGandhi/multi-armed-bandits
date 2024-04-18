@@ -1,29 +1,7 @@
-import sys
-sys.path.append("../")
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-import os
-from data_loader import load_subset
-
-data_path = "/Users/kahaan/Desktop/multi-armed-bandits/netflix-recommendations/data/"
-subset = load_subset(data_path)
-
-# Split genres into lists and expand each genre into seprate row
-subset['Genres'] = subset['Genres'].str.split('|') 
-df_exploded = subset.explode('Genres') 
-unique_genres = df_exploded.Genres.unique()
-genres = df_exploded["Genres"].unique().tolist()
-
-unnormalized_distributions = {}
-for genre in genres:
-    subset = list(df_exploded[df_exploded["Genres"] == genre]["Rating"])
-    rating_counts = {}
-    for rating in range(1,6):
-        rating_counts[rating] = subset.count(rating)
-    unnormalized_distributions[genre] = rating_counts
 
 #---------------------------------------#
 # LinUCB (upper confidence bound) agent

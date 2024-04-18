@@ -1,21 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
-import os
-import sys
-
-#-----------------#
-# Directory setup
-#-----------------#
-
-# Establish base directory relative to current script location
-script_location = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-base_directory = os.path.normpath(os.path.join(script_location, '..', 'netflix-recommendations'))
-if not os.path.isdir(base_directory):
-    raise Exception(f"The directory {base_directory} does not exist.")
-if base_directory not in sys.path:
-    sys.path.append(base_directory)
 
 #------------------------#
 # Local imports and data 
@@ -23,10 +8,22 @@ if base_directory not in sys.path:
 
 from data_loader import load_subset
 from agents import EpsilonGreedyAgent, EpsilonFirstAgent, LinUCBAgent
-from environments import GenreEnjoyerEnvironment
+from environments import MultipleGenreEnjoyerEnvironment, GenreEnjoyerEnvironment, AverageViewerEnvironment, NicheGenreLoyalistEnvironment, MultipleNicheGenreLoyalistEnvironment
 
-data_path = "/Users/kahaan/Desktop/multi-armed-bandits/netflix-recommendations/data/"
+data_path = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
 subset = load_subset(data_path)
+
+#-----------------#
+# Directory setup
+#-----------------#
+
+# Establish base directory relative to current script location
+# script_location = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+# base_directory = os.path.normpath(os.path.join(script_location, '..', 'netflix-recommendations'))
+# if not os.path.isdir(base_directory):
+#    raise Exception(f"The directory {base_directory} does not exist.")
+# if base_directory not in sys.path:
+#    sys.path.append(base_directory)
 
 #-------------------------------#
 # Preprocess genres and ratings
@@ -46,6 +43,13 @@ for genre in genres:
     for rating in range(1,6):
         rating_counts[rating] = subset.count(rating)
     unnormalized_distributions[genre] = rating_counts
+    
+# Determine niche genres based on threshold
+movies_per_genre = df_exploded.groupby('Genres')['MovieID'].nunique()
+ratings_per_genre = df_exploded.groupby('Genres')['Rating'].count()
+threshold_movies = movies_per_genre.quantile(0.25)
+threshold_ratings = ratings_per_genre.quantile(0.25)
+niche_genres = movies_per_genre[movies_per_genre <= threshold_movies].index.tolist()
 
 #----------------#
 # Run simulation 
@@ -55,11 +59,14 @@ for genre in genres:
 # np.random.seed(777)
 N = 1000
 
-user = GenreEnjoyerEnvironment(genres, unnormalized_distributions, 1)
+user1 = MultipleGenreEnjoyerEnvironment(genres, unnormalized_distributions, 1)
+user2 = GenreEnjoyerEnvironment(genres, unnormalized_distributions, 2)
+user3 = MultipleNicheGenreLoyalistEnvironment(genres, niche_genres, unnormalized_distributions, 3)
+user4 = NicheGenreLoyalistEnvironment(genres, niche_genres, unnormalized_distributions, 4)
 
-agent1 = EpsilonFirstAgent(genres, N, epsilon=0.1, environment=user)
-agent2 = EpsilonGreedyAgent(genres, N, epsilon=0.1, environment=user)
-agent3 = LinUCBAgent(genres, N, environment=user)
+agent1 = EpsilonFirstAgent(genres, N, epsilon=0.1, environment=user1)
+agent2 = EpsilonGreedyAgent(genres, N, epsilon=0.1, environment=user1)
+agent3 = LinUCBAgent(genres, N, environment=user1)
 
 rewards1 = agent1.run()
 rewards2 = agent2.run()
