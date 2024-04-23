@@ -1,123 +1,139 @@
-import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+from environments import *  
+from agents import *        
+from data_loader import *
 
-#------------------------#
-# Local imports and data 
-#------------------------#
+#-----------------------#
+# Simulation parameters
+#-----------------------#
 
-from data_loader import load_subset
-from agents import *
-from environments import *
+np.random.seed(777)
+N = 10000
+total_users = 10
+dynamic_epsilon = 0.276
+hybrid_epsilon = 0.022
+
+#----------------------------------------------------#
+# Enviornment helper functions: setup and simulation
+#----------------------------------------------------#
+
+# Create environment, checking if environment class requires niche genres 
+def create(env_class, genres, distributions, niche_genres, index):
+    if env_class in [MultipleNicheGenreLoyalistEnvironment, NicheGenreLoyalistEnvironment]:
+        return env_class(genres, distributions, niche_genres, index)
+    else:
+        return env_class(genres, distributions, index)
+
+# Run agents on the specified environment
+def run(environment, agents, steps=N):
+    results = {}
+    # Create a set of agents for the current environment, with flexibility in ε 
+    for agent_name, agent_class in agents.items():
+        if agent_name == "ε-Decreasing Hybrid":
+            agent = agent_class(genres, steps, epsilon=dynamic_epsilon, environment=environment)
+        elif agent_name == "ε-Greedy Hybrid":
+            agent = agent_class(genres, steps, epsilon=hybrid_epsilon, environment=environment)
+        else:
+            agent = agent_class(genres, steps, environment=environment)
+        rewards = agent.run()
+        results[agent_name] = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)  # Compute and store cumulative average
+    return results
+
+#--------------------------#
+# Load and preprocess data
+#--------------------------#
 
 data_path = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
 subset = load_subset(data_path)
+genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=False)
 
-#-----------------#
-# Directory setup
-#-----------------#
+#--------------------------------#
+# Define environments and agents
+#--------------------------------#
 
-# Establish base directory relative to current script location
-# script_location = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-# base_directory = os.path.normpath(os.path.join(script_location, '..', 'netflix-recommendations'))
-# if not os.path.isdir(base_directory):
-#    raise Exception(f"The directory {base_directory} does not exist.")
-# if base_directory not in sys.path:
-#    sys.path.append(base_directory)
+# Use proportions from mining_user_profiles.ipynb to construct an ensemble of users...
+environments = [
+    (MultipleNicheGenreLoyalistEnvironment, int(0.22 * total_users)),
+    (MultipleGenreEnjoyerEnvironment, int(0.44 * total_users)),
+    (GenreEnjoyerEnvironment, int(0.06 * total_users)),
+    (NicheGenreLoyalistEnvironment, int(0.10 * total_users)),
+    (AverageViewerEnvironment, int(0.18 * total_users)),
+]
 
-#-------------------------------#
-# Preprocess genres and ratings
-#-------------------------------#
-
-# Split genres into lists and expand each genre into seprate row
-subset['Genres'] = subset['Genres'].str.split('|') 
-df_exploded = subset.explode('Genres') 
-unique_genres = df_exploded.Genres.unique()
-genres = df_exploded["Genres"].unique().tolist()
-
-# Process genre-specific rating distributions before passing to environments
-unnormalized_distributions = {}
-for genre in genres:
-    subset = list(df_exploded[df_exploded["Genres"] == genre]["Rating"])
-    rating_counts = {}
-    for rating in range(1,6):
-        rating_counts[rating] = subset.count(rating)
-    unnormalized_distributions[genre] = rating_counts
-    
-# Determine niche genres based on threshold
-movies_per_genre = df_exploded.groupby('Genres')['MovieID'].nunique()
-ratings_per_genre = df_exploded.groupby('Genres')['Rating'].count()
-threshold_movies = movies_per_genre.quantile(0.25)
-threshold_ratings = ratings_per_genre.quantile(0.25)
-niche_genres = movies_per_genre[movies_per_genre <= threshold_movies].index.tolist()
+agents = {
+    'Dirichlet Sampling': DirichletSamplingAgent,
+    'ε-decreasing Hybrid': EpsilonDecreasingHybridAgent,
+    'ε-greedy Hybrid': EpsilonGreedyHybridAgent,
+    'ε-first': EpsilonFirstAgent,
+    'ε-greedy': EpsilonGreedyAgent,
+    'LinUCB': LinUCBAgent,
+    'ε-decreasing': EpsilonDecreasingAgent,
+    'A/B Testing': ABTestingAgent,
+}
 
 #----------------#
-# Run simulation 
+# Run simulation
 #----------------#
 
-# Define step number and (optional) random seed
-# np.random.seed(777)
-N = 10000
+# Set up CLI progress bar
+overall_results = {name: [] for name in agents}
+total_environments = sum(count for _, count in environments) 
+progress_bar = tqdm(total=total_environments, desc="Running Simulations")  
 
-user5 = MultipleGenreEnjoyerEnvironment(genres, unnormalized_distributions, 1)
-user2 = GenreEnjoyerEnvironment(genres, unnormalized_distributions, 2)
-user3 = MultipleNicheGenreLoyalistEnvironment(genres, niche_genres, unnormalized_distributions, 3)
-user4 = NicheGenreLoyalistEnvironment(genres, niche_genres, unnormalized_distributions, 4)
-user1 = AverageViewerEnvironment(genres, unnormalized_distributions, 5)
-
-user = user1
-
-agent1 = EpsilonFirstAgent(genres, N, epsilon=0.1, environment=user)
-agent2 = EpsilonGreedyAgent(genres, N, epsilon=0.1, environment=user)
-agent3 = LinUCBAgent(genres, N, environment=user)
-agent4 = EpsilonDecreasingAgent(genres, N, environment=user)
-
-rewards1 = agent1.run()
-rewards2 = agent2.run()
-rewards3 = agent3.run()
-rewards4 = agent4.run()
+# Create each requested enviornment, then run agents on it and record the results
+for env_class, count in environments:
+    for i in range(count):
+        env = create(env_class, genres, unnormalized_distributions, niche_genres, i+1)
+        results = run(env, agents)
+        for name in agents:
+            overall_results[name].append(results[name])
+        progress_bar.update(1)  
+progress_bar.close()
 
 #-------------------------------#
 # Evaluating agent performances
 #-------------------------------#
 
-# user.plot_distributions()
-# agent1.analyze(plot_option="both")
-# agent2.analyze(plot_option="both")
-# agent3.analyze(plot_option="both")
+plt.rcParams.update(plt.rcParamsDefault)
+plt.rcParams['axes.facecolor'] = 'white'
+plt.rcParams['figure.facecolor'] = 'white'
+plt.rcParams['grid.color'] = '#cccccc'  # Keeping the grid light gray for subtle structuring
+plt.rcParams['grid.linestyle'] = '--'
+plt.rcParams['grid.linewidth'] = 0.5
 
-# Helper function to calculate rolling average and cumulative average
-def analyze_rewards(rewards, N):
-    rewards = np.array(rewards)
-    rolling_avg = pd.Series(rewards).rolling(window=max(10, int(N * 0.20))).mean() # Set sliding window size
-    cumulative_avg = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)
-    return rolling_avg, cumulative_avg
+aggregated_results = {name: np.mean(overall_results[name], axis=0) for name in agents}
+cmap = plt.get_cmap('turbo') 
 
-rolling_avg1, cumulative_avg1 = analyze_rewards(rewards1, N)
-rolling_avg2, cumulative_avg2 = analyze_rewards(rewards2, N)
-rolling_avg3, cumulative_avg3 = analyze_rewards(rewards3, N)
-rolling_avg4, cumulative_avg4 = analyze_rewards(rewards4, N)
+colors = [cmap(i) for i in np.linspace(0, 1, len(agents))]
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 7))
+window_size = int(N * 0.01)
 
 # Plot rolling window average...
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 7))
-axes[0].plot(rolling_avg1, label='ε-First', color='maroon')
-axes[0].plot(rolling_avg2, label='ε-Greedy', color='steelblue')
-axes[0].plot(rolling_avg3, label='LinUCB', color='darkviolet')
-axes[0].plot(rolling_avg4, label='ε-Decreasing', color='forestgreen')
+for index, (name, results) in enumerate(aggregated_results.items()):
+    rolling_avg = np.convolve(results, np.ones(window_size)/window_size, mode='valid')
+    axes[0].plot(rolling_avg, label=name, color=colors[index])
 axes[0].set_title('Rolling Window Average Reward')
 axes[0].set_xlabel('Step')
 axes[0].set_ylabel('Average Rating')
 axes[0].legend()
 
-# and cumulative average reward
-axes[1].plot(cumulative_avg1, label='ε-First', color='maroon')
-axes[1].plot(cumulative_avg2, label='ε-Greedy', color='steelblue')
-axes[1].plot(cumulative_avg3, label='LinUCB', color='darkviolet')
-axes[1].plot(cumulative_avg4, label='ε-Decreasing', color='forestgreen')
+# and cumulative average plots
+end_values = []
+for index, (name, results) in enumerate(aggregated_results.items()):
+    cumulative_avg = np.cumsum(results) / np.arange(1, len(results) + 1)
+    axes[1].plot(cumulative_avg, label=name, color=colors[index])
+    # Collecting the last value of each agent for ranking purposes
+    end_values.append((name, cumulative_avg[-1]))
 axes[1].set_title('Cumulative Average Reward')
 axes[1].set_xlabel('Step')
 axes[1].set_ylabel('Average Rating')
 axes[1].legend()
-
-plt.tight_layout()
 plt.show()
+
+# Display final rankings based on the cumulative averages (~EV)
+end_values.sort(key=lambda x: x[1], reverse=True)
+rankings = "\n".join([f"{idx + 1}. {name} - {value:.2f}" for idx, (name, value) in enumerate(end_values)])
+print("Rankings based on the final values of the cumulative averages:")
+print(rankings)

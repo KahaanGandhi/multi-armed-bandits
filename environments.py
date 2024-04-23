@@ -6,7 +6,7 @@ import numpy as np
 #--------------------------------------------------------#
 
 class GenreEnjoyerEnvironment:
-    def __init__(self, genre_list, unnormalized_distributions, user_id):
+    def __init__(self, genre_list, unnormalized_distributions, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id
         self.favorite_genre = np.random.choice(genre_list)  # Randomly select a favorite genre
@@ -68,7 +68,7 @@ class GenreEnjoyerEnvironment:
 #----------------------------------------------------#
 
 class NicheGenreLoyalistEnvironment:
-    def __init__(self, genre_list, niche_genre_list, unnormalized_distributions, user_id):
+    def __init__(self, genre_list, unnormalized_distributions, niche_genre_list, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id
         self.favorite_genre = np.random.choice(niche_genre_list)  # Randomly select a favorite genre
@@ -133,7 +133,7 @@ class NicheGenreLoyalistEnvironment:
 #----------------------------------------------------------------#
 
 class MultipleGenreEnjoyerEnvironment:
-    def __init__(self, genre_list, unnormalized_distributions, user_id):
+    def __init__(self, genre_list, unnormalized_distributions, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id
         self.favorite_genres = np.random.choice(genre_list, size=np.random.randint(1, len(genre_list)), replace=False)
@@ -194,7 +194,7 @@ class MultipleGenreEnjoyerEnvironment:
 #------------------------------------------------------------------------#
 
 class MultipleNicheGenreLoyalistEnvironment:
-    def __init__(self, genre_list, niche_genre_list, unnormalized_distributions, user_id):
+    def __init__(self, genre_list, unnormalized_distributions, niche_genre_list, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id
         self.num_boosted_genres = np.random.randint(1, len(niche_genre_list) + 1)
@@ -260,7 +260,7 @@ class MultipleNicheGenreLoyalistEnvironment:
 #-----------------------------------------------------------------------#
 
 class AverageViewerEnvironment:
-    def __init__(self, genre_list, unnormalized_distributions, user_id):
+    def __init__(self, genre_list, unnormalized_distributions, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id
         self.reward_distributions = self.create_reward_distributions(unnormalized_distributions)
