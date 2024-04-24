@@ -4,7 +4,7 @@ import numpy as np
 import seaborn as sns
 
 #--------------------------------------------------------------------------------------------------------------------#
-# Dirichlet Sampling (Multinomial Thompson Sampling)
+# Dirichlet Sampling
 # Uses Thompson Sampling with multinomial reward distribution modeling. Based on papers below.
 # Riou and Honda, 2020, "Bandit Algorithms Based on Thompson Sampling for Bounded Reward Distributions"
 # Baudry, Saux, Maillard, 2021, "From Optimality to Robustness: Dirichlet Sampling Strategies in Stochastic Bandits"
@@ -60,6 +60,7 @@ class DirichletSamplingAgent:
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
+        
         # 1. Plot learned posteriors (Using KDE for a smooth curve)
         if plot_option in ["both", "posterior"]:
             plt.figure(figsize=(14, 7))
@@ -70,9 +71,10 @@ class DirichletSamplingAgent:
                     sns.kdeplot(data, label=f'{genre}', color=colors[idx])
                 else:
                     plt.axvline(x=data[0] if len(data) > 0 else 0, label=f'{genre} (single value)', linestyle='--', color=colors[idx])
-            plt.title('Multinomial Thompson Sampling: Learned Posterior Distribution by Genre')
+            plt.title('Dirichlet Sampling: Learned Posterior Distribution by Genre')
             plt.legend(loc='upper right')
             plt.show()
+            
         # 2. Plot cumulative average reeward and sliding window average
         if plot_option in ["both", "trends"]:
             window_size = max(10, int(self.N * 0.02))
@@ -83,7 +85,7 @@ class DirichletSamplingAgent:
             plt.plot(rolling_avg, label='Rolling Average Reward (window size={window_size})', color='darkblue')
             plt.xlabel('Step')
             plt.ylabel('Reward')
-            plt.title('Multinomial Thompson Sampling: Reward Trends Over Time')
+            plt.title('Dirichlet Sampling: Reward Trends Over Time')
             plt.legend()
             plt.show()
 
@@ -120,16 +122,19 @@ class LinUCBAgent:
                     # Ensure that each arm is explored at least once
                     ucb_value = np.inf
                 ucb_values.append(ucb_value)
+                
             # Select arm with highest UCB value...    
             chosen_arm = np.argmax(ucb_values)
             reward = self.environment.get_reward(chosen_arm)
             self.arm_history[chosen_arm].append(reward)
             rewards.append(reward)
             self.arm_counts[chosen_arm] += 1
+            
             # and update the corresponding EV
             old_EV = self.arm_EV[chosen_arm]
             n = self.arm_counts[chosen_arm]
             self.arm_EV[chosen_arm] = (old_EV * (n - 1) + reward) / n
+            
         self.recent_rewards = rewards 
         return rewards    
 
@@ -146,8 +151,9 @@ class LinUCBAgent:
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
+        
+        # 1. Plot learned posteriors (Using KDE for a smooth curve)
         if plot_option in ["both", "posterior"]:
-            # 1. Plot learned posteriors (Using KDE for a smooth curve)
             plt.figure(figsize=(14, 7))
             for idx, genre in enumerate(genres):
                 data = self.arm_history[idx]
@@ -160,8 +166,9 @@ class LinUCBAgent:
             plt.title('LinUCB: Learned Posterior Distribution by Genre')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show()
+            
+        # 2. Plot cumulative average reeward and sliding window average
         if plot_option in ["both", "trends"]:
-            # 2. Plot cumulative average reeward and sliding window average
             window_size = 200  
             rolling_avg = pd.Series(rewards).rolling(window=window_size).mean()
             cumulative_average = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)
@@ -182,6 +189,8 @@ class LinUCBAgent:
 class EpsilonDecreasingAgent:
     def __init__(self, genre_list, steps, environment=None):
         self.genre_list = genre_list
+        
+        # K-armed bandit problem: genres as arms and user as environment
         self.k = len(genre_list)
         self.N = steps
         self.initial_epsilon = 0.99  # Starting epsilon near 1 for maximum initial exploration
@@ -205,15 +214,17 @@ class EpsilonDecreasingAgent:
             else:
                 # Exploit: choose the best known arm
                 arm = np.argmax(self.arm_EV) 
+            
+            # Update the arm's expected value (EV) and history
             reward = self.environment.get_reward(arm)
             rewards.append(reward)
-            # Update the arm's expected value (EV) and history
             n = self.arm_counts[arm] + 1
             self.arm_counts[arm] = n
             current_EV = self.arm_EV[arm]
             new_EV = current_EV + (reward - current_EV) / n
             self.arm_EV[arm] = new_EV
             self.arm_history[arm].append(reward)
+            
         self.recent_rewards = rewards  
         return rewards
 
@@ -230,6 +241,7 @@ class EpsilonDecreasingAgent:
         rewards = np.array(self.recent_rewards) if rewards is None else np.array(rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
+        
         # 1. Plot learned posteriors (Using KDE for a smooth curve)
         if plot_option in ["both", "posterior"]:
             plt.figure(figsize=(14, 7))
@@ -243,6 +255,7 @@ class EpsilonDecreasingAgent:
             plt.title('ε-decreasing: Learned Posterior Distribution by Genre')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show()
+            
         # 2. Plot cumulative average reeward and sliding window average  
         if plot_option in ["both", "trends"]:
             window_size = max(10, int(self.N * 0.02))  
@@ -308,6 +321,8 @@ class EpsilonFirstAgent:
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
+        
+        # 1. Plot learned posteriors (Using KDE for a smooth curve)
         if plot_option in ["both", "posterior"]:
             # Plot learned posteriors (Using KDE for a smooth curve)
             plt.figure(figsize=(14, 7))
@@ -322,8 +337,9 @@ class EpsilonFirstAgent:
             plt.title('ε-first: Learned Posterior Distribution by Genre')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show()
+        
+        # 2. Plot cumulative average reeward and sliding window average
         if plot_option in ["both", "trends"]:
-            # 2. Plot cumulative average reeward and sliding window average
             window_size = 200  
             rolling_avg = pd.Series(rewards).rolling(window=window_size).mean()
             cumulative_average = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)
@@ -366,9 +382,11 @@ class EpsilonGreedyAgent:
             else:
                 # If exploitation chosen, select arm with highest expected value
                 arm = np.argmax(self.arm_EV)
+                
             # Get the reward...
             reward = self.environment.get_reward(arm)
             rewards.append(reward)
+            
             # and update the respective EVs
             n = self.arm_counts[arm] + 1
             self.arm_counts[arm] = n
@@ -376,6 +394,7 @@ class EpsilonGreedyAgent:
             new_EV = current_EV + (reward - current_EV) / n
             self.arm_EV[arm] = new_EV
             self.arm_history[arm].append(reward)
+            
         self.recent_rewards = rewards  
         return rewards
     
@@ -392,8 +411,9 @@ class EpsilonGreedyAgent:
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
+        
+        # 1. Plot learned posteriors (Using KDE for a smooth curve)
         if plot_option in ["both", "posterior"]:
-            # 1. Plot learned posteriors (Using KDE for a smooth curve)
             plt.figure(figsize=(14, 7))
             for idx, genre in enumerate(genres):
                 data = self.arm_history[idx]
@@ -406,8 +426,9 @@ class EpsilonGreedyAgent:
             plt.title('ε-greedy: Learned Posterior Distribution by Genre')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show()
+            
+        # 2. Plot cumulative average reeward and sliding window average
         if plot_option in ["both", "trends"]:
-            # 2. Plot cumulative average reeward and sliding window average
             window_size = max(10, int(self.N * 0.02))  
             rolling_avg = pd.Series(rewards).rolling(window=window_size).mean()
             cumulative_average = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)
@@ -443,6 +464,7 @@ class ABTestingAgent:
     def run(self):
         rewards = [] 
         exploration_steps = int(self.N * 0.2) 
+        
         # Phase 1: initial uniform exploration for 20% of total steps
         for t in range(exploration_steps):
             chosen_arm = t % self.k
@@ -451,6 +473,7 @@ class ABTestingAgent:
             self.arm_history[chosen_arm].append(reward)
             self.arm_rewards[chosen_arm] += reward
             self.arm_counts[chosen_arm] += 1
+            
         # Phase 2: Exploit the best arms for 80%, continue to explore for 20%
         for t in range(exploration_steps, self.N):
             if np.random.rand() < 0.8:
@@ -463,6 +486,7 @@ class ABTestingAgent:
             self.arm_history[chosen_arm].append(reward)
             self.arm_rewards[chosen_arm] += reward
             self.arm_counts[chosen_arm] += 1
+            
         self.recent_rewards = rewards
         return rewards
 
@@ -479,6 +503,7 @@ class ABTestingAgent:
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
+        
         # 1. Plot learned posteriors (Using KDE for a smooth curve)
         if plot_option in ["both", "posterior"]:
             plt.figure(figsize=(14, 7))
@@ -492,6 +517,7 @@ class ABTestingAgent:
             plt.title('A/B Testing: Learned Posterior Distribution by Genre')
             plt.legend(loc='upper right')
             plt.show()
+            
         # 2. Plot cumulative average reeward and sliding window average
         if plot_option in ["both", "trends"]:
             window_size = max(10, int(self.N * 0.02))
@@ -508,7 +534,7 @@ class ABTestingAgent:
             
 #--------------------------------------------------------------------------#
 # ε-decreasing hybrid
-# Mixes Thompson Sampling and UCB strategies based on decaying probability.
+# Mixes Dirichlet Sampling and UCB strategies based on decaying probability.
 #--------------------------------------------------------------------------#
 
 class EpsilonDecreasingHybridAgent:
@@ -535,10 +561,12 @@ class EpsilonDecreasingHybridAgent:
                 confidence_bounds = [np.mean(self.dirichlet_params[arm]) + np.sqrt(2 * np.log(i+1) / (self.arm_counts[arm] + 1e-10)) for arm in range(self.k)]
                 chosen_arm = np.argmax(confidence_bounds)
             else:
-                # otherwise use Multinomial Thompson Sampling
+                # otherwise use Dirichlet Sampling
                 sampled_probs = [np.random.dirichlet(params) for params in self.dirichlet_params] 
                 expected_rewards = [np.dot(probs, np.arange(1, 6)) for probs in sampled_probs]
                 chosen_arm = np.argmax(expected_rewards)
+                
+            # Log rewards in history and update Dirichlet parameters
             reward = self.environment.get_reward(chosen_arm)
             rewards.append(reward)
             self.recent_rewards.append(reward)
@@ -554,6 +582,7 @@ class EpsilonDecreasingHybridAgent:
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
+        
         # 1. Plot learned posteriors (Using KDE for a smooth curve)
         if plot_option in ["both", "posterior"]:
             plt.figure(figsize=(14, 7))
@@ -567,6 +596,7 @@ class EpsilonDecreasingHybridAgent:
             plt.title('ε-decreasing Hybrid: Learned Posterior Distribution by Genre')
             plt.legend(loc='upper right')
             plt.show()
+            
         # 2. Plot cumulative average reeward and sliding window average
         if plot_option in ["both", "trends"]:
             window_size = max(10, int(self.N * 0.02))
@@ -581,10 +611,10 @@ class EpsilonDecreasingHybridAgent:
             plt.legend()
             plt.show()
 
-#-----------------------------------------------------------------------#
+#------------------------------------------------------------------------#
 # ε-greedy hybrid
-# Mixes Thompson Sampling and UCB strategies based on fixed probability.
-#-----------------------------------------------------------------------#
+# Mixes Dirichlet Sampling and UCB strategies based on fixed probability.
+#------------------------------------------------------------------------#
 class EpsilonGreedyHybridAgent:
     def __init__(self, genre_list, steps, epsilon=0.1, environment=None):
         self.k = len(genre_list)
@@ -598,7 +628,7 @@ class EpsilonGreedyHybridAgent:
         self.arm_history = {arm_index: [] for arm_index in range(self.k)}
         self.arm_counts = np.zeros(self.k)
 
-    # At each step, ε probability to select LinUCB, 1-ε probability to select Multinomial Thompson sampling
+    # At each step, ε probability to select LinUCB, 1-ε probability to select Dirichlet sampling
     def run(self):
         rewards = []
         for i in range(self.N):
@@ -607,11 +637,12 @@ class EpsilonGreedyHybridAgent:
                 confidence_bounds = [np.mean(self.dirichlet_params[arm]) + np.sqrt(2 * np.log(i+1) / (self.arm_counts[arm] + 1e-10)) for arm in range(self.k)]
                 chosen_arm = np.argmax(confidence_bounds)
             else:
-                # Multinomial Thompson Sampling: sample a probability vector to calculate EV, then select the highest EV arm
+                # Dirichlet Sampling: sample a probability vector to calculate EV, then select the highest EV arm
                 sampled_probs = [np.random.dirichlet(params) for params in self.dirichlet_params] 
                 expected_rewards = [np.dot(probs, np.arange(1, 6)) for probs in sampled_probs]
                 chosen_arm = np.argmax(expected_rewards)
             
+            # Log rewards in history and update Dirichlet parameters
             reward = self.environment.get_reward(chosen_arm)
             rewards.append(reward)
             self.recent_rewards.append(reward)
@@ -633,6 +664,7 @@ class EpsilonGreedyHybridAgent:
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
+        
         # 1. Plot learned posteriors (Using KDE for a smooth curve)
         if plot_option in ["both", "posterior"]:
             plt.figure(figsize=(14, 7))
@@ -646,6 +678,7 @@ class EpsilonGreedyHybridAgent:
             plt.title('ε-greedy Hybrid: Learned Posterior Distribution by Genre')
             plt.legend(loc='upper right')
             plt.show()
+            
         # 2. Plot cumulative average reeward and sliding window average
         if plot_option in ["both", "trends"]:
             window_size = max(10, int(self.N * 0.02))
