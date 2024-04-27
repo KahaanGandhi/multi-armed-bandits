@@ -9,11 +9,10 @@ from data_loader import *
 # Simulation parameters
 #-----------------------#
 
-cmap = plt.get_cmap('nipy_spectral') # nipy_spectral isn't bad...
-#np.random.seed(77)
-np.random.seed(100)
+cmap = plt.get_cmap('nipy_spectral')
+#np.random.seed(100)
 N = 10000
-total_users = 100
+total_users = 10
 dynamic_epsilon = 0.276
 hybrid_epsilon = 0.022
 
@@ -67,7 +66,7 @@ environments = [
 agents = {
     'Dirichlet Sampling': DirichletSamplingAgent,
     'ε-decreasing Hybrid': EpsilonDecreasingHybridAgent,
-    'ε-greedy Hybrid': EpsilonGreedyHybridAgent,
+    'Deep Q-Network': DQNAgent,
     'ε-first': EpsilonFirstAgent,
     'ε-greedy': EpsilonGreedyAgent,
     'LinUCB': LinUCBAgent,

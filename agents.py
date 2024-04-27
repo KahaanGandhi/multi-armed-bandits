@@ -1,11 +1,127 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 import seaborn as sns
+import random
+import math
 from sklearn.ensemble import RandomForestClassifier
+from collections import namedtuple, deque
 
+# TODO: document DQN (update description) and Dirichlet Forest sampling
+# TODO: add nesting TQDM for current simulation
+
+# A single transition, mapping (state, action) pairs to their results
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+
+# Store transitions observed by agent, allowing for decorrelated batches by sampling randomly
+class ReplayMemory:
+    def __init__(self, capacity):
+        self.memory = deque([], maxlen=capacity)
+
+    # Save a transition
+    def push(self, *args):
+        self.memory.append(Transition(*args))
+
+    # Randomly sample a batch of transitions
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
+
+    def __len__(self):
+        return len(self.memory)
+
+class DQNAgent:
+    def __init__(self, genre_list, steps, environment=None, epsilon_start=1.0, epsilon_final=0.01, epsilon_decay=500,
+                 hidden_size=64, gamma=0.99, batch_size=128, target_update=10):
+        self.environment = environment
+        self.N = steps
+        self.genre_list = genre_list                        # Actions: genres to choose from
+        self.state_size = len(self.genre_list)
+        self.action_size = len(self.genre_list)
+        self.gamma = gamma                                  # Discount factor for future rewards 
+        self.epsilon = epsilon_start                        # ε-decreasing: starting value...
+        self.epsilon_final = epsilon_final                  # minimum value after decay...
+        self.epsilon_decay = epsilon_decay                  # and decay rate
+        self.steps_done = 0
+        self.batch_size = batch_size                        # Size of ReplayMemory batches
+        self.memory = ReplayMemory(10000)
+        self.target_update = target_update                  # Frequency for training target network
+        self.policy_net = self.build_model(hidden_size)     # Policy network (predicts best actions for given state)
+        self.target_net = self.build_model(hidden_size)     # Target network (stable baseline) 
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.target_net.eval()
+        self.optimizer = optim.Adam(self.policy_net.parameters())
+
+    # Construct NN with given hiden size
+    def build_model(self, hidden_size):
+        model = nn.Sequential(
+            nn.Linear(self.state_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, self.action_size)
+        )
+        return model
+
+    # Select action using ε-decreasing policy
+    def select_action(self, state):
+        # Calculate current ε, with a gradual decay
+        eps_threshold = self.epsilon_final + (self.epsilon - self.epsilon_final) * math.exp(-1. * self.steps_done / self.epsilon_decay)
+        self.steps_done += 1
+        if random.random() > eps_threshold:
+            # Exploit: current best arm
+            with torch.no_grad():
+                return self.policy_net(state).max(1)[1].view(1, 1)
+        else:
+            # Explore: random arm
+            return torch.tensor([[random.randrange(self.action_size)]], dtype=torch.long)
+
+    # Interact w/ enviornment to collect rewards, training policy network on experiences
+    def run(self):
+        state = torch.zeros([1, self.state_size])   # No prior information
+        rewards = []
+        for step in range(self.N):
+            action = self.select_action(state)                          # Choose an action...
+            reward = self.environment.get_reward(action.item())         # collect the reward...
+            rewards.append(reward)
+            next_state = torch.zeros([1, self.state_size])
+            self.memory.push(state, action, next_state, torch.tensor([reward], dtype=torch.float32))
+            state = next_state
+            self.optimize_model()
+
+            if step % self.target_update == 0:
+                self.target_net.load_state_dict(self.policy_net.state_dict())
+
+        return rewards
+
+    def optimize_model(self):
+        if len(self.memory) < self.batch_size:
+            return
+        transitions = self.memory.sample(self.batch_size)
+        batch = Transition(*zip(*transitions))
+
+        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)), dtype=torch.bool)
+        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
+        state_batch = torch.cat(batch.state)
+        action_batch = torch.cat(batch.action)
+        reward_batch = torch.cat(batch.reward)
+
+        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
+        next_state_values = torch.zeros(self.batch_size)
+        next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
+        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
+
+        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
+        self.optimizer.zero_grad()
+        loss.backward()
+        for param in self.policy_net.parameters():
+            param.grad.data.clamp_(-1, 1)
+        self.optimizer.step()
+        
 #--------------------------------------------------------------------------------------------------------------------#
-# TODO: fix this descriptions
 # Forest-Enhanced Dirichlet Sampling
 # Uses Thompson Sampling with multinomial reward distribution modeling. Based on papers below.
 # Riou and Honda, 2020, "Bandit Algorithms Based on Thompson Sampling for Bounded Reward Distributions"
@@ -23,7 +139,7 @@ class DirichletSamplingAgent:
         self.model = RandomForestClassifier(n_estimators=100) if use_ml else None 
         self.model_initialized = False
 
-    def train_model(self):
+    def train(self):
         X = []
         y = []
         for _, rewards in self.arm_history.items():
@@ -56,7 +172,7 @@ class DirichletSamplingAgent:
             #self.dirichlet_params[chosen_arm][reward - 1] += (1 + reward / 5)
 
             if self.use_ml and (i + 1) % 1000 == 0:
-                self.train_model()
+                self.train()
                 self.boost()
             if (i + 1) % 100 == 0 and i >= 100:
                 self.dynamic_boost()
