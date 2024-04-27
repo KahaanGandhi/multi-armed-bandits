@@ -5,7 +5,7 @@ import numpy as np
 # Genre enjoyer: biases ratings towards a favorite genre
 #--------------------------------------------------------#
 
-class GenreEnjoyerEnvironment:
+class GenreEnjoyer:
     def __init__(self, genre_list, unnormalized_distributions, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id
@@ -67,7 +67,7 @@ class GenreEnjoyerEnvironment:
 # Niche genre loyalist: preference for a niche genre
 #----------------------------------------------------#
 
-class NicheGenreLoyalistEnvironment:
+class NicheGenreLoyalist:
     def __init__(self, genre_list, unnormalized_distributions, niche_genre_list, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id
@@ -132,7 +132,7 @@ class NicheGenreLoyalistEnvironment:
 # Multiple genre enjoyer: biases ratings towards favorite genres
 #----------------------------------------------------------------#
 
-class MultipleGenreEnjoyerEnvironment:
+class MultipleGenreEnjoyer:
     def __init__(self, genre_list, unnormalized_distributions, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id
@@ -193,7 +193,7 @@ class MultipleGenreEnjoyerEnvironment:
 # Multiple niche genre loyalist: preference for one or more niche genres
 #------------------------------------------------------------------------#
 
-class MultipleNicheGenreLoyalistEnvironment:
+class MultipleNicheGenreLoyalist:
     def __init__(self, genre_list, unnormalized_distributions, niche_genre_list, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id
@@ -259,7 +259,7 @@ class MultipleNicheGenreLoyalistEnvironment:
 # Average viewers: average ratings conform with genre-specific averages 
 #-----------------------------------------------------------------------#
 
-class AverageViewerEnvironment:
+class AverageViewer:
     def __init__(self, genre_list, unnormalized_distributions, user_id=None):
         self.genre_list = genre_list
         self.user_id = user_id

@@ -1,20 +1,26 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from environments import *  
-from agents import *        
-from data_loader import *
+
+try:
+    from environments import *  
+    from agents import *        
+    from data_loader import *   
+    assert all(module in globals() for module in ['AverageViewer', 'LinUCB', 'preprocess'])
+    print("All modules loaded successfully.")
+except ImportError as e:
+    print(f"Failed to load one or more modules: {e}")
+except AssertionError:
+    print("Expected classes or functions are missing.")
 
 #-----------------------#
 # Simulation parameters
 #-----------------------#
 
-cmap = plt.get_cmap('nipy_spectral')
-#np.random.seed(100)
+cmap = plt.get_cmap('gnuplot')
+np.random.seed(100)
 N = 10000
-total_users = 10
-dynamic_epsilon = 0.276
-hybrid_epsilon = 0.022
+total_users = 100
 
 #----------------------------------------------------#
 # Enviornment helper functions: setup and simulation
@@ -22,7 +28,7 @@ hybrid_epsilon = 0.022
 
 # Create environment, checking if environment class requires niche genres 
 def create(env_class, genres, distributions, niche_genres, index):
-    if env_class in [MultipleNicheGenreLoyalistEnvironment, NicheGenreLoyalistEnvironment]:
+    if env_class in [MultipleNicheGenreLoyalist, NicheGenreLoyalist]:
         return env_class(genres, distributions, niche_genres, index)
     else:
         return env_class(genres, distributions, index)
@@ -30,25 +36,25 @@ def create(env_class, genres, distributions, niche_genres, index):
 # Run agents on the specified environment
 def run(environment, agents, steps=N):
     results = {}
-    # Create a set of agents for the current environment, with flexibility in ε 
     for agent_name, agent_class in agents.items():
-        if agent_name == "ε-Decreasing Hybrid":
-            agent = agent_class(genres, steps, epsilon=dynamic_epsilon, environment=environment)
-        elif agent_name == "ε-Greedy Hybrid":
-            agent = agent_class(genres, steps, epsilon=hybrid_epsilon, environment=environment)
-        else:
-            agent = agent_class(genres, steps, environment=environment)
+        # Create a set of agents for the current environment
+        agent = agent_class(genres, steps, environment=environment)
         rewards = agent.run()
-        results[agent_name] = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)  # Compute and store cumulative average
+        results[agent_name] = np.cumsum(rewards) / np.arange(1, len(rewards) + 1)
     return results
 
 #--------------------------#
 # Load and preprocess data
 #--------------------------#
 
-data_path = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
-subset = load_subset(data_path)
-genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=False)
+try:
+    data_path = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
+    subset = load_subset(data_path)
+    genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=False)
+    print(f"Data loaded and preprocessed successfully. Loaded {len(genres)} genres and {len(subset)} records.")
+except Exception as e:
+    print(f"Error during data loading and preprocessing: {e}")
+
 
 #--------------------------------#
 # Define environments and agents
@@ -56,22 +62,22 @@ genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=Fa
 
 # Use proportions from mining_user_profiles.ipynb to construct an ensemble of users
 environments = [
-    (MultipleNicheGenreLoyalistEnvironment, int(0.22 * total_users)),
-    (MultipleGenreEnjoyerEnvironment, int(0.44 * total_users)),
-    (GenreEnjoyerEnvironment, int(0.06 * total_users)),
-    (NicheGenreLoyalistEnvironment, int(0.10 * total_users)),
-    (AverageViewerEnvironment, int(0.18 * total_users)),
+    (MultipleNicheGenreLoyalist, int(0.22 * total_users)),
+    (MultipleGenreEnjoyer, int(0.44 * total_users)),
+    (GenreEnjoyer, int(0.06 * total_users)),
+    (NicheGenreLoyalist, int(0.10 * total_users)),
+    (AverageViewer, int(0.18 * total_users)),
 ]
 
 agents = {
-    'Dirichlet Sampling': DirichletSamplingAgent,
-    'ε-decreasing Hybrid': EpsilonDecreasingHybridAgent,
-    'Deep Q-Network': DQNAgent,
-    'ε-first': EpsilonFirstAgent,
-    'ε-greedy': EpsilonGreedyAgent,
-    'LinUCB': LinUCBAgent,
-    'ε-decreasing': EpsilonDecreasingAgent,
-    'A/B Testing': ABTestingAgent,
+    'Dirichlet Forest Sampling': DirichletForestSampling,
+    'Deep Q-Network': DeepQNetwork,
+    'ε-first': EpsilonFirst,
+    'ε-greedy': EpsilonGreedy,
+    'LinUCB': LinUCB,
+    'ε-decreasing Hybrid': EpsilonDecreasingHybrid,
+    'ε-decreasing': EpsilonDecreasing,
+    'A/B Testing': ABTesting,
 }
 
 #----------------#
@@ -81,7 +87,7 @@ agents = {
 # Set up CLI progress bar
 overall_results = {name: [] for name in agents}
 total_environments = sum(count for _, count in environments) 
-progress_bar = tqdm(total=total_environments, desc="Running Simulations")  
+progress_bar = tqdm(total=total_environments, desc="{:34}".format("Simulating agent interactions"))
 
 # Create each requested enviornment, then run agents on it and record the results
 for env_class, count in environments:
@@ -97,6 +103,7 @@ progress_bar.close()
 # Evaluating agent performances
 #-------------------------------#
 
+# TODO: impprove DPI
 # Plot settings
 plt.rcParams.update(plt.rcParamsDefault)
 plt.rcParams['axes.facecolor'] = 'white'
