@@ -9,9 +9,11 @@ from data_loader import *
 # Simulation parameters
 #-----------------------#
 
-np.random.seed(777)
+cmap = plt.get_cmap('nipy_spectral') # nipy_spectral isn't bad...
+#np.random.seed(77)
+np.random.seed(100)
 N = 10000
-total_users = 10
+total_users = 100
 dynamic_epsilon = 0.276
 hybrid_epsilon = 0.022
 
@@ -53,7 +55,7 @@ genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=Fa
 # Define environments and agents
 #--------------------------------#
 
-# Use proportions from mining_user_profiles.ipynb to construct an ensemble of users...
+# Use proportions from mining_user_profiles.ipynb to construct an ensemble of users
 environments = [
     (MultipleNicheGenreLoyalistEnvironment, int(0.22 * total_users)),
     (MultipleGenreEnjoyerEnvironment, int(0.44 * total_users)),
@@ -96,41 +98,42 @@ progress_bar.close()
 # Evaluating agent performances
 #-------------------------------#
 
+# Plot settings
 plt.rcParams.update(plt.rcParamsDefault)
 plt.rcParams['axes.facecolor'] = 'white'
 plt.rcParams['figure.facecolor'] = 'white'
-plt.rcParams['grid.color'] = '#cccccc'  # Keeping the grid light gray for subtle structuring
+plt.rcParams['grid.color'] = '#cccccc'
 plt.rcParams['grid.linestyle'] = '--'
 plt.rcParams['grid.linewidth'] = 0.5
-
-aggregated_results = {name: np.mean(overall_results[name], axis=0) for name in agents}
-cmap = plt.get_cmap('turbo') 
-
+plt.rcParams['axes.grid'] = True
 colors = [cmap(i) for i in np.linspace(0, 1, len(agents))]
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 7))
-window_size = int(N * 0.01)
 
-# Plot rolling window average...
+aggregated_results = {name: np.mean(overall_results[name], axis=0) for name in agents}
+window_size = int(N * 0.0025)
+
+# Plot rolling window average with markers...
 for index, (name, results) in enumerate(aggregated_results.items()):
     rolling_avg = np.convolve(results, np.ones(window_size)/window_size, mode='valid')
-    axes[0].plot(rolling_avg, label=name, color=colors[index])
-axes[0].set_title('Rolling Window Average Reward')
+    axes[0].plot(rolling_avg, label=name, color=colors[index], marker='^', markersize=4.5, markevery=500)
+axes[0].set_title('Rolling Window Reward')
 axes[0].set_xlabel('Step')
 axes[0].set_ylabel('Average Rating')
 axes[0].legend()
 
-# and cumulative average plots
+# and cumulative average plots with markers
 end_values = []
 for index, (name, results) in enumerate(aggregated_results.items()):
     cumulative_avg = np.cumsum(results) / np.arange(1, len(results) + 1)
-    axes[1].plot(cumulative_avg, label=name, color=colors[index])
+    axes[1].plot(cumulative_avg, label=name, color=colors[index], marker='^', markersize=4.5, markevery=500)
     # Collecting the last value of each agent for ranking purposes
     end_values.append((name, cumulative_avg[-1]))
-axes[1].set_title('Cumulative Average Reward')
+axes[1].set_title('Cumulative Reward')
 axes[1].set_xlabel('Step')
 axes[1].set_ylabel('Average Rating')
 axes[1].legend()
 plt.show()
+
 
 # Display final rankings based on the cumulative averages (~EV)
 end_values.sort(key=lambda x: x[1], reverse=True)

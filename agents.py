@@ -2,58 +2,87 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from sklearn.ensemble import RandomForestClassifier
 
 #--------------------------------------------------------------------------------------------------------------------#
-# Dirichlet Sampling
+# TODO: fix this descriptions
+# Forest-Enhanced Dirichlet Sampling
 # Uses Thompson Sampling with multinomial reward distribution modeling. Based on papers below.
 # Riou and Honda, 2020, "Bandit Algorithms Based on Thompson Sampling for Bounded Reward Distributions"
 # Baudry, Saux, Maillard, 2021, "From Optimality to Robustness: Dirichlet Sampling Strategies in Stochastic Bandits"
 #--------------------------------------------------------------------------------------------------------------------#
 
 class DirichletSamplingAgent:
-    def __init__(self, genre_list, steps, environment=None):
-        self.k = len(genre_list)
-        
-        # K-armed bandit problem: genres as arms and user as environment
+    def __init__(self, genre_list, steps, environment=None, use_ml=True):
+        self.k = len(genre_list)  
         self.N = steps  
-        self.environment = environment
-        self.dirichlet_params = np.ones((self.k, 5))  # Initialize Dirichlet parameters with uniform priors
-        self.arm_history = {arm_index: [] for arm_index in range(self.k)}  
+        self.environment = environment  
+        self.dirichlet_params = np.ones((self.k, 5))  
+        self.arm_history = {arm_index: [] for arm_index in range(self.k)} 
+        self.use_ml = use_ml 
+        self.model = RandomForestClassifier(n_estimators=100) if use_ml else None 
+        self.model_initialized = False
 
-    # At each step, sample from Dirichlet distribution to maximize EV based on iteratively updated reward probabilities
+    def train_model(self):
+        X = []
+        y = []
+        for _, rewards in self.arm_history.items():
+            if len(rewards) > 1: 
+                features = [
+                    np.mean(rewards),
+                    np.std(rewards, ddof=1),
+                    np.sum(np.array(rewards) >= 4) / len(rewards), 
+                    len(rewards)
+                ]
+                X.append(features)
+                y.append(1 if np.mean(rewards) > 4 else 0) 
+        if X:
+            self.model.fit(X, y)
+            self.model_initialized = True
+
     def run(self):
         rewards = []
         for i in range(self.N):
-            sampled_probs = [np.random.dirichlet(params) for params in self.dirichlet_params]  # Sample a probability vector...
-            expected_rewards = [np.dot(probs, np.arange(1, 6)) for probs in sampled_probs]     # use it to calculate EV...
-            chosen_arm = np.argmax(expected_rewards)                                           # and select the highest EV arm
+            sampled_probs = [np.random.dirichlet(params) for params in self.dirichlet_params]
+            expected_rewards = [np.dot(probs, np.arange(1, 6)) for probs in sampled_probs]
+            chosen_arm = np.argmax(expected_rewards)
             
-            # Retrieve reward and update history 
             reward = self.environment.get_reward(chosen_arm)
             rewards.append(reward)
             self.arm_history[chosen_arm].append(reward)
-            
-            # Weight higher ratings more, and boost well-performing genres every 100 steps
-            self.dirichlet_params[chosen_arm][reward - 1] += (1 + reward / 5)
-            if (i + 1) % 100 == 0:
+  
+            increment = 1 + 0.1 * (reward - 1) + 0.0375 * (reward - 1)**2
+            self.dirichlet_params[chosen_arm][reward - 1] += increment
+            #self.dirichlet_params[chosen_arm][reward - 1] += (1 + reward / 5)
+
+            if self.use_ml and (i + 1) % 1000 == 0:
+                self.train_model()
                 self.boost()
-    
-        self.recent_rewards = rewards
+            if (i + 1) % 100 == 0 and i >= 100:
+                self.dynamic_boost()
+
         return rewards
-    
-    # Boost parameters for genres with average rewards greater than 4
+
     def boost(self):
+        for arm in range(self.k):
+            if len(self.arm_history[arm]) > 1:
+                features = [
+                    np.mean(self.arm_history[arm]),
+                    np.std(self.arm_history[arm], ddof=1),
+                    np.sum(np.array(self.arm_history[arm]) >= 4) / len(self.arm_history[arm]),
+                    len(self.arm_history[arm])
+                ]
+                if self.model.predict([features])[0] == 1:
+                    self.dirichlet_params[arm] += np.array([0, 0, 0, 1, 2])
+
+    def dynamic_boost(self):
         average_rewards = [np.mean(history) if history else 0 for history in self.arm_history.values()]
         for i, avg in enumerate(average_rewards):
-            if avg > 4: 
-                self.dirichlet_params[i] += np.array([0, 0, 1, 1, 2])
-    
-    # Clear history and reset Reset Dirichlet parameters to uniform priors to start a new run
-    def reset(self):
-        self.dirichlet_params = np.ones((self.k, 5))  
-        self.arm_history = {arm_index: [] for arm_index in range(self.k)}
-        self.recent_rewards = []
+            if avg > 4:
+                self.dirichlet_params[i] += np.array([0, 0, 1, 2, 3])
 
+
+    # TODO: fix agent name, add a nested TQDM
     # Generate plots and diagnostics to evaluate agent performance 
     def analyze(self, plot_option="both"):
         # Prepare data
