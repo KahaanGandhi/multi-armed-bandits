@@ -6,19 +6,22 @@ try:
     from environments import *  
     from agents import *        
     from data_loader import *   
-    assert all(module in globals() for module in ['AverageViewer', 'LinUCB', 'preprocess'])
+    assert all(module in globals() for module in ['AverageViewer', 'AdvantageActorCritic', 'preprocess'])
     print("All modules loaded successfully.")
 except ImportError as e:
     print(f"Failed to load one or more modules: {e}")
 except AssertionError:
     print("Expected classes or functions are missing.")
 
-#-----------------------#
-# Simulation parameters
-#-----------------------#
+#-----------------------------------#
+# Simulation settings and parameters
+#-----------------------------------#
 
+# TODO: improve figure resolution
+# TODO: move notebooks somewhere else?
+# TODO: rename subset?
+np.random.seed(777)
 cmap = plt.get_cmap('gnuplot')
-np.random.seed(100)
 N = 10000
 total_users = 100
 
@@ -55,7 +58,6 @@ try:
 except Exception as e:
     print(f"Error during data loading and preprocessing: {e}")
 
-
 #--------------------------------#
 # Define environments and agents
 #--------------------------------#
@@ -71,12 +73,12 @@ environments = [
 
 agents = {
     'Dirichlet Forest Sampling': DirichletForestSampling,
-    'Deep Q-Network': DeepQNetwork,
-    'ε-first': EpsilonFirst,
+    #'Deep Q-Network': DeepQNetwork,
+    'Advantage Actor-Critic':AdvantageActorCritic,
     'ε-greedy': EpsilonGreedy,
-    'LinUCB': LinUCB,
-    'ε-decreasing Hybrid': EpsilonDecreasingHybrid,
+    'ε-first': EpsilonFirst,
     'ε-decreasing': EpsilonDecreasing,
+    'LinUCB': LinUCB,
     'A/B Testing': ABTesting,
 }
 
@@ -87,7 +89,7 @@ agents = {
 # Set up CLI progress bar
 overall_results = {name: [] for name in agents}
 total_environments = sum(count for _, count in environments) 
-progress_bar = tqdm(total=total_environments, desc="{:34}".format("Simulating agent interactions"))
+progress_bar = tqdm(total=total_environments, desc="{:40}".format("Simulating agent interactions"))
 
 # Create each requested enviornment, then run agents on it and record the results
 for env_class, count in environments:
@@ -103,7 +105,6 @@ progress_bar.close()
 # Evaluating agent performances
 #-------------------------------#
 
-# TODO: impprove DPI
 # Plot settings
 plt.rcParams.update(plt.rcParamsDefault)
 plt.rcParams['axes.facecolor'] = 'white'

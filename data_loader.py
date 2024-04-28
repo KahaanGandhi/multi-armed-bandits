@@ -62,6 +62,33 @@ def transform_file_to_dataframe(file_path):
     dataframe = pd.DataFrame(transformed_data, columns=columns)
     return dataframe
 
+def preprocess(subset, verbose=False):
+    # Split genres into lists and expand each genre into seprate row
+    subset['Genres'] = subset['Genres'].str.split('|') 
+    df_exploded = subset.explode('Genres') 
+    genres = df_exploded["Genres"].unique().tolist()
+
+    # Process genre-specific rating distributions before passing to environments
+    unnormalized_distributions = {}
+    for genre in genres:
+        genre_ratings = list(df_exploded[df_exploded["Genres"] == genre]["Rating"])
+        rating_counts = {}
+        for rating in range(1,6):
+            rating_counts[rating] = genre_ratings.count(rating)
+        unnormalized_distributions[genre] = rating_counts
+
+    # Determine niche genres based on threshold
+    movies_per_genre = df_exploded.groupby('Genres')['MovieID'].nunique()
+    threshold_movies = movies_per_genre.quantile(0.25)
+    niche_genres = movies_per_genre[movies_per_genre <= threshold_movies].index.tolist()
+    
+    if verbose:
+        print("Preprocess completed.")
+        print("Genres:", genres)
+        print("Niche Genres:", niche_genres)
+        
+    return genres, unnormalized_distributions, niche_genres
+
 # Read full Netflix prize data as DataFrame 
 def load_netflix_data(data_path, verbose=False):
     title_path = data_path + "movie_titles.txt"
@@ -106,30 +133,3 @@ def load_netflix_data(data_path, verbose=False):
         print(f"The smallest amount of entries for any UserID is: {smallest_entries_count}")
 
     return df_final
-
-def preprocess(subset, verbose=False):
-    # Split genres into lists and expand each genre into seprate row
-    subset['Genres'] = subset['Genres'].str.split('|') 
-    df_exploded = subset.explode('Genres') 
-    genres = df_exploded["Genres"].unique().tolist()
-
-    # Process genre-specific rating distributions before passing to environments
-    unnormalized_distributions = {}
-    for genre in genres:
-        genre_ratings = list(df_exploded[df_exploded["Genres"] == genre]["Rating"])
-        rating_counts = {}
-        for rating in range(1,6):
-            rating_counts[rating] = genre_ratings.count(rating)
-        unnormalized_distributions[genre] = rating_counts
-
-    # Determine niche genres based on threshold
-    movies_per_genre = df_exploded.groupby('Genres')['MovieID'].nunique()
-    threshold_movies = movies_per_genre.quantile(0.25)
-    niche_genres = movies_per_genre[movies_per_genre <= threshold_movies].index.tolist()
-    
-    if verbose:
-        print("Preprocess completed.")
-        print("Genres:", genres)
-        print("Niche Genres:", niche_genres)
-        
-    return genres, unnormalized_distributions, niche_genres
