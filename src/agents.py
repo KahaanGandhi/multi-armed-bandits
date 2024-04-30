@@ -102,13 +102,13 @@ class DirichletForestSampling:
             if avg > 4:
                 self.dirichlet_params[i] += np.array([0, 0, 1, 2, 3])
 
-    # Generate plots and diagnostics to evaluate agent performance 
+    # Generate plots and diagnostics to evaluate agent performance
     def analyze(self, plot_option="both"):
         # Prepare data
         rewards = np.array(self.recent_rewards)
         genres = np.array(self.genre_list)
         colors = plt.cm.viridis(np.linspace(0, 1, len(genres)))
-        
+
         # 1. Plot learned posteriors (Using KDE for a smooth curve)
         if plot_option in ["both", "posterior"]:
             plt.figure(figsize=(14, 7))
@@ -122,7 +122,7 @@ class DirichletForestSampling:
             plt.title('Dirichlet Forest Sampling: Learned Posterior Distribution by Genre')
             plt.legend(loc='upper right')
             plt.show()
-            
+
         # 2. Plot cumulative average reeward and sliding window average
         if plot_option in ["both", "trends"]:
             window_size = max(10, int(self.N * 0.02))
@@ -163,8 +163,8 @@ class ReplayMemory:
         return len(self.memory)
 
 class DeepQNetwork:
-    def __init__(self, genre_list, steps, environment=None, epsilon_start=1.0, epsilon_final=0.01, epsilon_decay=1000,
-                 hidden_size=64, gamma=0.99, batch_size=128, target_update=200):
+    def __init__(self, genre_list, steps, environment=None, epsilon_start=1.0, epsilon_final=0.01, epsilon_decay=2000,
+                 hidden_size=64, gamma=0.99, batch_size=256, target_update=400):
         self.environment = environment
         self.N = steps
         self.genre_list = genre_list                        # Actions: genres to choose from

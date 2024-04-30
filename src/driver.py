@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import sys
 
 try:
+    sys.path.insert(0, '/Users/kahaan/Desktop/multi-armed-bandits')
     from environments import *  
     from agents import *        
-    from data_loader import *   
+    from utils import *
     assert all(module in globals() for module in ['AverageViewer', 'AdvantageActorCritic', 'preprocess'])
     print("All modules loaded successfully.")
 except ImportError as e:
@@ -20,10 +22,13 @@ except AssertionError:
 # TODO: improve figure resolution
 # TODO: move notebooks somewhere else?
 # TODO: rename subset?
-np.random.seed(777)
+# TODO: add runtime diagnostics
+# TODO: find good random seed
+
+np.random.seed(1)
 cmap = plt.get_cmap('gnuplot')
 N = 10000
-total_users = 100
+total_users = 3
 
 #----------------------------------------------------#
 # Enviornment helper functions: setup and simulation
@@ -73,10 +78,10 @@ environments = [
 
 agents = {
     'Dirichlet Forest Sampling': DirichletForestSampling,
-    #'Deep Q-Network': DeepQNetwork,
+    'Deep Q-Network': DeepQNetwork,
     'Advantage Actor-Critic':AdvantageActorCritic,
-    'ε-greedy': EpsilonGreedy,
     'ε-first': EpsilonFirst,
+    'ε-greedy': EpsilonGreedy,
     'ε-decreasing': EpsilonDecreasing,
     'LinUCB': LinUCB,
     'A/B Testing': ABTesting,
@@ -140,7 +145,6 @@ axes[1].set_xlabel('Step')
 axes[1].set_ylabel('Average Rating')
 axes[1].legend()
 plt.show()
-
 
 # Display final rankings based on the cumulative averages (~EV)
 end_values.sort(key=lambda x: x[1], reverse=True)
