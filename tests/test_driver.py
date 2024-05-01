@@ -56,7 +56,7 @@ def run(environment, agents, steps=N):
 @pytest.fixture(scope="module")
 def setup_data():
     np.random.seed(random_seed)
-    BASE_DIR = os.path.dirname(os.getcwd())
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATA_PATH = os.path.join(BASE_DIR, 'data/')
     subset = load_subset(DATA_PATH)
     genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=False)
@@ -118,5 +118,5 @@ def test_agent_performance(run_agents):
     for change in final_changes.values():
         assert change < 0.01
 
-# if __name__ == "__main__":
-#     pytest.main([__file__])
+if __name__ == "__main__":
+    pytest.main([__file__])

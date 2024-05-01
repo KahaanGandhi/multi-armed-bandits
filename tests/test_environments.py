@@ -26,7 +26,7 @@ except ModuleNotFoundError:
 # Load and preprocess data
 #--------------------------#
 
-BASE_DIR = os.path.dirname(os.getcwd())
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(BASE_DIR, 'data/')
 subset = load_subset(DATA_PATH)
 genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=False)
