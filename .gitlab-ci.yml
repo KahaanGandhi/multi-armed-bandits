@@ -2,14 +2,7 @@ image: python:3.9.6
 
 stages:
   - test
-
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-
-cache:
-  paths:
-    - .cache/pip
-    - venv/
+  - push_to_github
 
 before_script:
   - python -V  # Print out python version for debugging
@@ -22,3 +15,22 @@ test:
   stage: test
   script:
     - pytest tests
+  artifacts:
+    paths:
+      - test_results.xml
+
+push_to_github:
+  stage: push_to_github
+  script:
+    - TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+    - COMMIT_MESSAGE="CI: Passed all tests - $TIMESTAMP"
+    - git config --global user.email kahaan@gmail.com
+    - git config --global user.name KahaanGandhi
+    - git remote add github_repo https://github.com/KahaanGandhi/multi-armed-bandits.git
+    - git add .
+    - git commit -m "$COMMIT_MESSAGE"
+    - git push github_repo HEAD:master
+  only:
+    - master  # Only push to GitHub when changes are on the master branch
+  dependencies:
+    - test
