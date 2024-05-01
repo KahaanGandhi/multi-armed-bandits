@@ -70,5 +70,5 @@ def test_preprocess():
     if 'Documentary' in unnormalized_distributions:
         assert sum(unnormalized_distributions['Documentary'].values()) > 5000, "Unexpected low number of ratings for 'Documentary'"
 
-if __name__ == "__main__":
-    pytest.main([__file__])
+# if __name__ == "__main__":
+#     pytest.main([__file__])

@@ -138,5 +138,5 @@ def simulate_and_test(env, genres, unnormalized_distributions, trials=5000, alph
         _, p_value = ttest_ind(observed_probabilities, expected_probabilities, equal_var=False)
     assert p_value > alpha    
 
-if __name__ == "__main__":
-    pytest.main([__file__])
+# if __name__ == "__main__":
+#     pytest.main([__file__])

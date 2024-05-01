@@ -414,5 +414,5 @@ class TestABTesting:
         most_chosen_arm = np.argmax(ab_testing_agent.arm_counts) 
         assert most_chosen_arm == expected_best_arm, "The most chosen arm should be the one with the highest rewards."
 
-if __name__ == "__main__":
-    pytest.main([__file__])
+# if __name__ == "__main__":
+#     pytest.main([__file__])
