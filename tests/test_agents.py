@@ -4,17 +4,25 @@ import torch
 import sys
 import os
 
-# Setup for directory and module imports
-current_dir = os.path.dirname(__file__)
-parent_dir = os.path.dirname(current_dir)
-src_path = os.path.abspath(os.path.join(parent_dir, 'src'))
-if src_path not in sys.path:
-    sys.path.append(src_path)
+#-----------------------------------#
+# Directory setup for local imports
+#-----------------------------------#
 
+current_dir = os.path.dirname(__file__)     # Get directory where script is located
+parent_dir = os.path.dirname(current_dir)   # Get parent directory
+src_path = os.path.join(parent_dir, 'src')  # Constructs path to src directory
+if src_path not in sys.path:
+    sys.path.append(src_path)               # Add src directory to sys.path
+
+# Try to import modules, handle failure gracefully
 try:
     from src.agents import *
 except ModuleNotFoundError:
     from agents import *
+
+#--------------------------------------------------#
+# Static enviornment to evaluate decision policies
+#--------------------------------------------------#
 
 # A simple stationary enviornment (always returns fixed reward for each genre)
 class DummyEnvironment:
@@ -24,6 +32,12 @@ class DummyEnvironment:
     # Return a predetermined reward based on arm index (fixed)
     def get_reward(self, arm_index):
         return self.rewards[arm_index]
+
+#-----------------------------------------------------------------------------------------------#
+# Test Suite for Agents
+# Bandit algorithms: verify initialization, balance of exploration/exploitation, and resetting.
+# Deep RL: additionally validate action selection, learning processes, and memory management. 
+#-----------------------------------------------------------------------------------------------#
 
 class TestDirichletForestSampling:
     @pytest.fixture

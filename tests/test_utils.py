@@ -13,6 +13,7 @@ src_path = os.path.join(parent_dir, 'src')  # Constructs path to src directory
 if src_path not in sys.path:
     sys.path.append(src_path)               # Add src directory to sys.path
 
+# Try to import modules, handle failure gracefully
 try:
     from src.utils import load_subset, preprocess
 except ModuleNotFoundError:
