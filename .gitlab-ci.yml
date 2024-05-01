@@ -1,3 +1,5 @@
+image: python:3.9.6
+
 stages:
   - test
 
@@ -11,7 +13,8 @@ cache:
 
 before_script:
   - python -V  # Print out python version for debugging
-  - python -m venv venv
+  - pip install virtualenv
+  - virtualenv venv
   - source venv/bin/activate
   - pip install -r requirements.txt
 
