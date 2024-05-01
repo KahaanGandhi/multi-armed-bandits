@@ -17,10 +17,11 @@ except AssertionError:
 # Simulation settings and parameters
 #-----------------------------------#
 
+# TODO: add stage to CI/CD, and record tools used
+# TODO: clean up test names
 # TODO: improve figure resolution
-# TODO: rename subset?
-# TODO: add runtime diagnostics
 # TODO: find good random seed
+# TODO: add caches to ignore
 
 np.random.seed(1)
 cmap = plt.get_cmap('gnuplot')
