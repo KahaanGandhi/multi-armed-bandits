@@ -19,7 +19,8 @@ try:
 except ModuleNotFoundError:
     from utils import load_subset, preprocess
 
-DATA_PATH = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
+BASE_DIR = os.path.dirname(os.getcwd())
+DATA_PATH = os.path.join(BASE_DIR, 'data/')
 
 #-----------------------------------------#
 # Verify that data is loaded in correctly
@@ -70,5 +71,5 @@ def test_preprocess():
     if 'Documentary' in unnormalized_distributions:
         assert sum(unnormalized_distributions['Documentary'].values()) > 5000, "Unexpected low number of ratings for 'Documentary'"
 
-# if __name__ == "__main__":
-#     pytest.main([__file__])
+if __name__ == "__main__":
+    pytest.main([__file__])

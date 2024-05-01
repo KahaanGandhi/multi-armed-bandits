@@ -56,8 +56,9 @@ def run(environment, agents, steps=N):
 @pytest.fixture(scope="module")
 def setup_data():
     np.random.seed(random_seed)
-    DATA_PATH = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
-    subset = load_subset(DATA_PATH)  # Ensure this function and the data are properly handled
+    BASE_DIR = os.path.dirname(os.getcwd())
+    DATA_PATH = os.path.join(BASE_DIR, 'data/')
+    subset = load_subset(DATA_PATH)
     genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=False)
     return genres, unnormalized_distributions, niche_genres
 

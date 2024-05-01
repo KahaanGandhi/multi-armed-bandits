@@ -26,7 +26,8 @@ except ModuleNotFoundError:
 # Load and preprocess data
 #--------------------------#
 
-DATA_PATH = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
+BASE_DIR = os.path.dirname(os.getcwd())
+DATA_PATH = os.path.join(BASE_DIR, 'data/')
 subset = load_subset(DATA_PATH)
 genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=False)
 
