@@ -1,10 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import sys
 
 try:
-    sys.path.insert(0, '/Users/kahaan/Desktop/multi-armed-bandits')
     from environments import *  
     from agents import *        
     from utils import *
@@ -20,7 +18,6 @@ except AssertionError:
 #-----------------------------------#
 
 # TODO: improve figure resolution
-# TODO: move notebooks somewhere else?
 # TODO: rename subset?
 # TODO: add runtime diagnostics
 # TODO: find good random seed
@@ -28,7 +25,7 @@ except AssertionError:
 np.random.seed(1)
 cmap = plt.get_cmap('gnuplot')
 N = 10000
-total_users = 3
+total_users = 3  # 3 for fast, 100 for thorough
 
 #----------------------------------------------------#
 # Enviornment helper functions: setup and simulation
@@ -56,8 +53,8 @@ def run(environment, agents, steps=N):
 #--------------------------#
 
 try:
-    data_path = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
-    subset = load_subset(data_path)
+    DATA_PATH = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
+    subset = load_subset(DATA_PATH)
     genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=False)
     print(f"Data loaded and preprocessed successfully. Loaded {len(genres)} genres and {len(subset)} records.")
 except Exception as e:

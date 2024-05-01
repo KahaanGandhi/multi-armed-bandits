@@ -102,6 +102,15 @@ class DirichletForestSampling:
             if avg > 4:
                 self.dirichlet_params[i] += np.array([0, 0, 1, 2, 3])
 
+    # Clear history, reinitialize Dirichlet parameters to uniform priors, and reset RandomForest if needed
+    def reset(self):
+        self.recent_rewards = []
+        self.arm_history = {arm_index: [] for arm_index in range(self.k)}
+        self.dirichlet_params = np.ones((self.k, 5))
+        if self.forest:
+            self.model = RandomForestClassifier(n_estimators=100)
+            self.initialized = False
+
     # Generate plots and diagnostics to evaluate agent performance
     def analyze(self, plot_option="both"):
         # Prepare data
@@ -171,7 +180,7 @@ class DeepQNetwork:
         self.state_size = len(self.genre_list)
         self.action_size = len(self.genre_list)
         self.gamma = gamma                                  # Discount factor for future rewards 
-        self.epsilon = epsilon_start                        # ε-decreasing: starting value...
+        self.epsilon_start= epsilon_start                        # ε-decreasing: starting value...
         self.epsilon_final = epsilon_final                  # minimum value after decay...
         self.epsilon_decay = epsilon_decay                  # and steo when decay ends (controls decay rate)
         self.steps_done = 0
@@ -200,7 +209,7 @@ class DeepQNetwork:
     # Select action using ε-decreasing policy
     def select_action(self, state):
         # Calculate current ε, with a gradual decay
-        eps_threshold = self.epsilon_final + (self.epsilon - self.epsilon_final) * \
+        eps_threshold = self.epsilon_final + (self.epsilon_start - self.epsilon_final) * \
                         math.exp(-1. * self.steps_done / self.epsilon_decay)
         self.steps_done += 1
         if random.random() > eps_threshold:
@@ -266,7 +275,7 @@ class DeepQNetwork:
     # Reset agent to start a new episode or training session
     def reset(self):
         self.steps_done = 0  
-        self.epsilon = self.initial_epsilon  
+        self.epsilon = self.epsilon_start  
         self.memory = ReplayMemory(10000)   # Optionally clear memory
         
         # Uncomment to reinitialize network weights, comment out to continue with learned weights
@@ -423,10 +432,12 @@ class AdvantageActorCritic:
         self.gamma = gamma                     # Discount factor for future rewards 
         self.lr = lr                           # Learning rate 
         self.entropy_coef = entropy_coef       # Randomness in policy, encouraging exploration
+        self.hidden_size = hidden_size
+
         
         # Actor and critic networks
-        self.actor = self.build_model(hidden_size, self.action_size)
-        self.critic = self.build_model(hidden_size, 1)
+        self.actor = self.build_model(self.hidden_size, self.action_size)
+        self.critic = self.build_model(self.hidden_size, 1)
         self.optimizer = optim.Adam(list(self.actor.parameters()) + list(self.critic.parameters()), lr=self.lr)
         
         # Initialize state with zeros
@@ -500,13 +511,13 @@ class AdvantageActorCritic:
     
     # Reset function to reinitialize variables for a new run or episode
     def reset(self):
-        self.steps_done = 0
         self.action_counts = np.zeros(len(self.genre_list))
         self.cumulative_rewards = np.zeros(len(self.genre_list))
         self.state = np.concatenate([self.action_counts, self.cumulative_rewards])
-        self.policy_net = self.build_model(self.hidden_size, self.action_size)
-        self.target_net = self.build_model(self.hidden_size, 1)
-        self.target_net.load
+        
+        # Rebuild models using the saved hidden_size
+        self.actor = self.build_model(self.hidden_size, self.action_size)
+        self.critic = self.build_model(self.hidden_size, 1)
         
     # Generate plots and diagnostics to evaluate agent performance 
     def analyze(self, plot_option="both"):
@@ -736,6 +747,7 @@ class EpsilonFirst:
     # Two-phase strategy: randomly explore for the first εN steps, then exploit best arm for the rest
     def run(self):
         rewards = []
+        best_arm = None  # Initialize best_arm
         with tqdm(total=self.N, desc="{:40}".format("Current agent: ε-first"), leave=False) as progress:
             for i in range(self.N):
                 if i < (self.epsilon * self.N):  # Exploration phase: select a random arm
@@ -744,7 +756,7 @@ class EpsilonFirst:
                     self.arm_history[arm].append(reward)
                     
                 elif i == int(self.epsilon * self.N):  # Decision point: find arm with highest expected value
-                    means = np.array([np.mean(rewards) if rewards else 0 for rewards in self.arm_history.values()])
+                    means = np.array([np.mean(history) if history else 0 for history in self.arm_history.values()])
                     best_arm = np.argmax(means)
                     reward = self.environment.get_reward(best_arm)
                     
@@ -756,6 +768,7 @@ class EpsilonFirst:
                 
         self.recent_rewards = rewards  
         return rewards
+
     
     # Clear history and statistics to start a new run
     def reset(self):
