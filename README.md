@@ -9,9 +9,9 @@ Formalizing the $K$-armed bandit problem, let $K \in \mathbb{N}^+$ be the number
 ## Existing Bandit Algorithms
 
 There are many existing bandit algorithms and deep reinforcement learning algorithms that can be applied to MAB problems. 
-- **Epsilon-First Strategy:** Begins with a pure exploration phase, selecting arms randomly for a fixed number of initial trials ($\epsilon$), before switching to a pure exploitation phase, repeatedly selecting the best-known arm.
-- **Epsilon-Greedy Algorithm:** Balances exploration and exploitation by choosing a random arm with a probability of $\epsilon$ and the best-known arm with a probability of $(1−\epsilon)$. [[4]](https://link.springer.com/article/10.1023/A:1013689704352)
-- **Epsilon-Decreasing Algorithm:** Starts with a high exploration rate that decreases over time, allowing for more exploitation in later trials.
+- **$\epsilon$-First:** Begins with a pure exploration phase, selecting arms randomly for a fixed number of initial trials ($\epsilon$), before switching to a pure exploitation phase, repeatedly selecting the best-known arm.
+- **$\epsilon$-Greedy:** Balances exploration and exploitation by choosing a random arm with a probability of $\epsilon$ and the best-known arm with a probability of $(1−\epsilon)$. [[4]](https://link.springer.com/article/10.1023/A:1013689704352)
+- **$\epsilon$-Decreasing:** Starts with a high exploration rate that decreases over time, allowing for more exploitation in later trials.
 - **LinUCB:** Uses a linear model to estimate rewards based on contextual information and selects the arm with the highest upper confidence bound on the estimated reward. [[5]](https://dl.acm.org/doi/10.1145/1772690.1772758)
 - **Thompson Sampling:** A Bayesian algorithm that models each arm's reward with a probability distribution, sampling from these distributions to decide which arm to pull, favoring arms with higher uncertainty. [[6]](https://www.jstor.org/stable/2332286)
 - **Advantage Actor-Critic (A2C):** Uses separate models for the policy (actor) and value function (critic), balancing immediate rewards and long-term value through stable learning.
@@ -20,7 +20,7 @@ There are many existing bandit algorithms and deep reinforcement learning algori
 
 ## Improved Dirichlet Sampling with Random Forests
 
-Existing algorithms for bounded reward distributions are either suboptimal or require solving an optimization problem at each step. Dirichlet parameters have been proposed as an extension of Thompson Sampling for Bernoulli rewards to bounded multinomial reward distributions, addressing the need for quick online decision-making without the computational burden of constant optimization [[7](https://proceedings.mlr.press/v117/riou20a.html)]. Dirichlet parameters represent the probabilities associated with each possible reward level for each arm, allowing for efficient sampling and updating of beliefs. I extend this concept by integrating a random forest classifier to dynamically adjust Dirichlet parameters based on observed performance in contexts where we lack specific user data but know general tendencies (e.g., users having favorite genres). Specifically, in Netflix genre recommendations, it accelerates convergence to the optimal strategy, maximizing cumulative rewards more efficiently than traditional algorithms. Additionally, I propose a nonlinear update to the Dirichlet parameters, fitted to a reward of 1 for a value of 1 and 2 for a value of 5.
+Existing algorithms for bounded reward distributions are either suboptimal or require solving an optimization problem at each step. Dirichlet parameters have been proposed as an extension of Thompson Sampling for Bernoulli rewards to bounded multinomial reward distributions, addressing the need for quick online decision-making without the computational burden of constant optimization [[7](https://proceedings.mlr.press/v117/riou20a.html)]. Dirichlet parameters represent the probabilities associated with each possible reward level for each arm, allowing for efficient sampling and updating of beliefs. I extend this concept by integrating a random forest classifier to further adjust Dirichlet parameters based on observed performance in contexts where we ***lack specific user data but know general tendencies*** (e.g., users having favorite genres). Specifically, in Netflix genre recommendations, it accelerates convergence to the optimal strategy, maximizing cumulative rewards more efficiently than traditional algorithms. Additionally, I propose a nonlinear update to the Dirichlet parameters, fitted to a reward of 1 for a value of 1 and 2 for a value of 5.
 
 The algorithm proceeds as follows: 
 1. **Initialization:** Initialize the Dirichlet parameters uniformly for each arm $k$, denoted as $\alpha_k = [1, 1, 1, 1, 1]$. Set up the random forest classifier.
@@ -29,7 +29,6 @@ The algorithm proceeds as follows:
 4. **Parameter Update:** After selecting the arm $A_t$ and observing the reward $R_{t,A_t} \in \{1, ..., M\}$, update the Dirichlet parameters with a nonlinear increment: $\alpha_{A_t}[R_{t,A_t} - 1] \leftarrow \alpha_{A_t}[R_{t,A_t} - 1] + 1 + 0.1 \times (R_{t,A_t} - 1) + 0.0375 \times (R_{t,A_t} - 1)^2$.
 5. **Classifier Training:** Periodically train the random forest classifier on a feature vector based on the accumulated reward history.
 6. **Parameter Boosting:** Use the trained random forest classifier to enhance the Dirichlet parameters for arms predicted to be favorites and adaptively boost the parameters based on observed average rewards exceeding a predefined threshold.
-
 
 IN PROGRESS...
 
