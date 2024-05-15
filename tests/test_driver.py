@@ -118,5 +118,5 @@ def test_agent_performance(run_agents):
     for change in final_changes.values():
         assert change < 0.01
 
-if __name__ == "__main__":
-    pytest.main([__file__])
+# if __name__ == "__main__":
+#    pytest.main([__file__])

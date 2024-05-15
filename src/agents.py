@@ -180,7 +180,7 @@ class DeepQNetwork:
         self.state_size = len(self.genre_list)
         self.action_size = len(self.genre_list)
         self.gamma = gamma                                  # Discount factor for future rewards 
-        self.epsilon_start= epsilon_start                        # ε-decreasing: starting value...
+        self.epsilon_start= epsilon_start                   # ε-decreasing: starting value...
         self.epsilon_final = epsilon_final                  # minimum value after decay...
         self.epsilon_decay = epsilon_decay                  # and steo when decay ends (controls decay rate)
         self.steps_done = 0
@@ -427,14 +427,13 @@ class AdvantageActorCritic:
         self.action_size = len(genre_list)      # Actions: genres to choose from
         self.recent_rewards = []
         
-        # State is expanded to include counts and cumulative rewards for each genre
+        # State includes counts and cumulative rewards for each genre
         self.state_size = 2 * len(genre_list)  # Two features per genre
         self.gamma = gamma                     # Discount factor for future rewards 
         self.lr = lr                           # Learning rate 
         self.entropy_coef = entropy_coef       # Randomness in policy, encouraging exploration
         self.hidden_size = hidden_size
 
-        
         # Actor and critic networks
         self.actor = self.build_model(self.hidden_size, self.action_size)
         self.critic = self.build_model(self.hidden_size, 1)

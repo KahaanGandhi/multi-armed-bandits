@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import os
 
 try:
     from environments import *  
@@ -20,13 +21,10 @@ except AssertionError:
 # TODO: add stage to CI/CD, and record tools used
 # TODO: clean up test names
 # TODO: improve figure resolution
-# TODO: find good random seed
-# TODO: add caches to ignore
 
-np.random.seed(1)
-cmap = plt.get_cmap('gnuplot')
+np.random.seed(747)
 N = 10000
-total_users = 3  # 3 for fast, 100 for thorough
+total_users = 100
 
 #----------------------------------------------------#
 # Enviornment helper functions: setup and simulation
@@ -54,7 +52,8 @@ def run(environment, agents, steps=N):
 #--------------------------#
 
 try:
-    DATA_PATH = "/Users/kahaan/Desktop/multi-armed-bandits/data/"
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    DATA_PATH = os.path.join(BASE_DIR, 'data/')
     subset = load_subset(DATA_PATH)
     genres, unnormalized_distributions, niche_genres = preprocess(subset, verbose=False)
     print(f"Data loaded and preprocessed successfully. Loaded {len(genres)} genres and {len(subset)} records.")
@@ -116,13 +115,26 @@ plt.rcParams['grid.color'] = '#cccccc'
 plt.rcParams['grid.linestyle'] = '--'
 plt.rcParams['grid.linewidth'] = 0.5
 plt.rcParams['axes.grid'] = True
-colors = [cmap(i) for i in np.linspace(0, 1, len(agents))]
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 7))
 
+# cmap = plt.get_cmap('gnuplot')
+# colors = [cmap(i) for i in np.linspace(0, 1, len(agents))]
+# colors = ["#1e3f66", "#9ac4e5", "#275d38", "#6ed0a3", "#990000", "#f08080", "#562c60", "#cda2d8"]
+colors = [
+    "#000000",  # Black
+    "#e74c3c",  # Soft Red
+    "#d35400",  # Soft Orange
+    "#f39c12",  # Soft Yellow
+    "#8e44ad",  # Soft Purple
+    "#3498db",  # Soft Blue
+    "#1abc9c",  # Soft Teal
+    "#2ecc71"   # Soft Green
+]
+
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 7))
 aggregated_results = {name: np.mean(overall_results[name], axis=0) for name in agents}
 window_size = int(N * 0.0025)
 
-# Plot rolling window average with markers...
+# Plot rolling window average with markers
 for index, (name, results) in enumerate(aggregated_results.items()):
     rolling_avg = np.convolve(results, np.ones(window_size)/window_size, mode='valid')
     axes[0].plot(rolling_avg, label=name, color=colors[index], marker='^', markersize=4.5, markevery=500)
