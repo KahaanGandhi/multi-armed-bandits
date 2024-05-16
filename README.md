@@ -22,7 +22,7 @@ There are many existing bandit algorithms and deep reinforcement learning algori
 
 ## Improved Dirichlet Sampling with Random Forests
 
-Existing algorithms for bounded reward distributions are either suboptimal or require solving an optimization problem at each step. Dirichlet parameters have been proposed as an extension of Thompson Sampling for Bernoulli rewards to bounded multinomial reward distributions, addressing the need for quick online decision-making without the computational burden of constant optimization [[7](https://proceedings.mlr.press/v117/riou20a.html)]. Dirichlet parameters represent the probabilities associated with each possible reward level for each arm, allowing for efficient sampling and updating of beliefs. 
+Existing algorithms for bounded reward distributions are either suboptimal or require solving an optimization problem at each step [[7](http://proceedings.mlr.press/v19/garivier11a/garivier11a.pdf)]. Dirichlet parameters have been proposed as an extension of Thompson Sampling for Bernoulli rewards to bounded multinomial reward distributions, addressing the need for quick online decision-making without the computational burden of constant optimization [[8](https://proceedings.mlr.press/v117/riou20a.html)]. Dirichlet parameters represent the probabilities associated with each possible reward level for each arm, allowing for efficient sampling and updating of beliefs. 
 
 I extend this concept by integrating a random forest classifier to further adjust Dirichlet parameters based on observed performance in contexts where we ***lack specific user data but know general tendencies*** (e.g., users being biased towards favorite genres). Specifically, in Netflix genre recommendations, it accelerates convergence to the optimal strategy, maximizing cumulative rewards more efficiently than traditional algorithms. My algorithm, Dirichlet Forest Sampling, also applies a nonlinear update to the Dirichlet parameters, fitted to a reward of 1 for a value of 1 and 2 for a value of 5.
 
@@ -70,7 +70,9 @@ As shown in the plots above, strategies like A/B testing and ε-first show rando
 
 6. **Thompson, W. R. (1933).** *On the likelihood that one unknown probability exceeds another in view of the evidence of two samples.* Biometrika, 25(3/4), 285-294.
 
-7. **Riou, C., & Honda, J. (2020).** *Bandit Algorithms Based on Thompson Sampling for Bounded Reward Distributions.* Proceedings of the 31st International Conference on Algorithmic Learning Theory, PMLR 117:777-826.
+7. **Garivier, A., & Cappé, O. (2011).** *The KL-UCB Algorithm for Bounded Stochastic Bandits and Beyond.* Conference On Learning Theory, 24, 359-376.
+
+8. **Riou, C., & Honda, J. (2020).** *Bandit Algorithms Based on Thompson Sampling for Bounded Reward Distributions.* Proceedings of the 31st International Conference on Algorithmic Learning Theory, PMLR 117:777-826.
 
 
 
