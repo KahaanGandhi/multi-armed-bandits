@@ -15,7 +15,7 @@ from tqdm import tqdm
 #----------------------------------------------------------------------------------------------------------------------#
 # Forest-Enhanced Dirichlet Sampling
 # Applies Thompson Sampling to a Dirichlet distribution for multinomial reward modeling, based on papers below.
-# Uses RandomForest predictions to boost parameters for genres likely to be favorites.
+# Uses random forest predictions to boost parameters for genres likely to be favorites.
 # - Riou and Honda, 2020: "Bandit Algorithms Based on Thompson Sampling for Bounded Reward Distributions"
 # - Baudry, Saux, Maillard, 2021: "From Optimality to Robustness: Dirichlet Sampling Strategies in Stochastic Bandits"
 #----------------------------------------------------------------------------------------------------------------------#
@@ -64,7 +64,7 @@ class DirichletForestSampling:
         self.recent_rewards = rewards
         return rewards
     
-    # Train the RandomForest model on accumulated history if sufficient data is available
+    # Train the random forest classifier on accumulated history if sufficient data is available
     def train(self):
         X = []
         y = []
@@ -82,7 +82,7 @@ class DirichletForestSampling:
             self.model.fit(X, y)
             self.initialized = True   # Update flag once model is trained
 
-    # Boost Dirichlet parameters for genres predicted to be favorites by RandomForest model
+    # Boost Dirichlet parameters for genres predicted to be favorites by radom forest
     def forest_boost(self):
         for arm in range(self.k):
             if len(self.arm_history[arm]) > 1:
@@ -102,7 +102,7 @@ class DirichletForestSampling:
             if avg > 4:
                 self.dirichlet_params[i] += np.array([0, 0, 1, 2, 3])
 
-    # Clear history, reinitialize Dirichlet parameters to uniform priors, and reset RandomForest if needed
+    # Clear history, reinitialize Dirichlet parameters to uniform priors, and reset classifier if needed
     def reset(self):
         self.recent_rewards = []
         self.arm_history = {arm_index: [] for arm_index in range(self.k)}

@@ -18,10 +18,6 @@ except AssertionError:
 # Simulation settings and parameters
 #-----------------------------------#
 
-# TODO: add stage to CI/CD, and record tools used
-# TODO: clean up test names
-# TODO: improve figure resolution
-
 np.random.seed(747)
 N = 10000
 total_users = 100
@@ -118,17 +114,8 @@ plt.rcParams['axes.grid'] = True
 
 # cmap = plt.get_cmap('gnuplot')
 # colors = [cmap(i) for i in np.linspace(0, 1, len(agents))]
-# colors = ["#1e3f66", "#9ac4e5", "#275d38", "#6ed0a3", "#990000", "#f08080", "#562c60", "#cda2d8"]
-colors = [
-    "#000000",  # Black
-    "#e74c3c",  # Soft Red
-    "#d35400",  # Soft Orange
-    "#f39c12",  # Soft Yellow
-    "#8e44ad",  # Soft Purple
-    "#3498db",  # Soft Blue
-    "#1abc9c",  # Soft Teal
-    "#2ecc71"   # Soft Green
-]
+colors = ["#000000", "#7c1158", "#4421af", "#1a53ff", "#0d88e6", "#00b7c7", "#6cc644", "#228b22"]
+
 
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 7))
 aggregated_results = {name: np.mean(overall_results[name], axis=0) for name in agents}

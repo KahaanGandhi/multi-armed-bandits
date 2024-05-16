@@ -1,3 +1,5 @@
+I propose an original algorithm, "Dirichlet Forest Sampling," building on previous work for bounded reward distributions without the computational burden of optimization problems at each step. This algorithm uses a scikit-learn random forest classifier and a nonlinear update mechanism to Dirichlet parameters, from which it samples to approximate the estimated value. I propose this algorithm for scenarios where we may not know specific user context but have a general intuition for user tendencies, which informs content recommendations. Using a subset of the Netflix Prize Data, I model user rating tendencies to create a 27-armed bandit scenario. I benchmark this algorithm against traditional bandits (e.g., LinUCB and $\epsilon$-greedy) and PyTorch-based deep reinforcement learning methods (e.g., Deep Q-Learning and Advantage Actor-Critic), demonstrating that it converges faster and maximizes cumulative rewards.
+
 ## Multi-Armed Bandit Problems
 
 The Multi-Armed Bandit (MAB) problem, a one-state Markov decision process, is a powerful framework in decision theory and reinforcement learning. It describes a scenario where an agent, faced with multiple options (referred to as "arms"), must repeatedly choose among them in a series of trials to maximize cumulative reward. While the problem has been formulated in various ways, I focus on stochastic and stationary reward distributions, where each arm provides a random reward drawn from a distribution that remains constant over time. The agent's goal is to identify the arm that yields the highest expected reward. This involves devising a strategy that balances exploration (trying different arms to gather information) and exploitation (choosing the best-known arm to maximize immediate reward). Too much exploration reduces potential rewards by wasting time on suboptimal arms, while too much exploitation can lead to missing out on better options. Optimizing total reward requires balancing these strategies.
@@ -20,22 +22,39 @@ There are many existing bandit algorithms and deep reinforcement learning algori
 
 ## Improved Dirichlet Sampling with Random Forests
 
-
 Existing algorithms for bounded reward distributions are either suboptimal or require solving an optimization problem at each step. Dirichlet parameters have been proposed as an extension of Thompson Sampling for Bernoulli rewards to bounded multinomial reward distributions, addressing the need for quick online decision-making without the computational burden of constant optimization [[7](https://proceedings.mlr.press/v117/riou20a.html)]. Dirichlet parameters represent the probabilities associated with each possible reward level for each arm, allowing for efficient sampling and updating of beliefs. 
 
-I extend this concept by integrating a random forest classifier to further adjust Dirichlet parameters based on observed performance in contexts where we ***lack specific user data but know general tendencies*** (e.g., users being biased towards favorite genres). Specifically, in Netflix genre recommendations, it accelerates convergence to the optimal strategy, maximizing cumulative rewards more efficiently than traditional algorithms. Additionally, I propose a nonlinear update to the Dirichlet parameters, fitted to a reward of 1 for a value of 1 and 2 for a value of 5.
+I extend this concept by integrating a random forest classifier to further adjust Dirichlet parameters based on observed performance in contexts where we ***lack specific user data but know general tendencies*** (e.g., users being biased towards favorite genres). Specifically, in Netflix genre recommendations, it accelerates convergence to the optimal strategy, maximizing cumulative rewards more efficiently than traditional algorithms. My algorithm, Dirichlet Forest Sampling, also applies a nonlinear update to the Dirichlet parameters, fitted to a reward of 1 for a value of 1 and 2 for a value of 5.
 
 ![Dirichlet Forest Sampling Pseudocode](./images/pseudocode.png)
 
-The algorithm proceeds as follows: 
-1. **Initialization:** Initialize the Dirichlet parameters uniformly for each arm $k$, denoted as $\alpha_k = [1, 1, 1, 1, 1]$. Set up the random forest classifier.
-2. **Reward Estimation:** At each time step $t$, sample from the Dirichlet distribution to estimate the expected reward for each arm using the formula $E_k = \Sigma_{m=1}^M \left(\frac{m}{M}\right) L_k[m]$, where $L_k \sim \text{Dir}(\alpha_k)$.
-3. **Action Selection:** Select the arm with the highest expected reward $A_t = \arg \max_k E_k$.
-4. **Parameter Update:** After selecting the arm $A_t$ and observing the reward $R_{t,A_t} \in \{1, ..., M\}$, update the Dirichlet parameters with a nonlinear increment: $\alpha_{A_t}[R_{t,A_t} - 1] \leftarrow \alpha_{A_t}[R_{t,A_t} - 1] + 1 + 0.1 \times (R_{t,A_t} - 1) + 0.0375 \times (R_{t,A_t} - 1)^2$.
-5. **Classifier Training:** Periodically train the random forest classifier on a feature vector based on the accumulated reward history.
-6. **Parameter Boosting:** Use the trained random forest classifier to enhance the Dirichlet parameters for arms predicted to be favorites and adaptively boost the parameters based on observed average rewards exceeding a predefined threshold.
+## Experimental Setup
 
-IN PROGRESS...
+To benchmark the Dirichlet Forest Sampling algorithm against other bandit and deep reinforcement learning strategies, I cleaned and processed a subset of the [Netflix Prize Data](https://www.kaggle.com/datasets/netflix-inc/netflix-prize-data) to model user rating tendencies within a framework that lacks specific user data but leverages broader user preferences. The users were categorized into five distinct profiles based on their rating patterns:
+1. **Average Viewers**: Users with average ratings across genres.
+2. **Genre Enjoyers**: Users with high ratings for a single genre.
+3. **Multiple Genre Enjoyers**: Users who favor multiple genres.
+4. **Niche Genre Loyalists**: Users loyal to a niche genre, with lower ratings for others.
+5. **Multiple Niche Genre Loyalists**: Users loyal to several niche genres, with selective higher ratings.
+
+This transformed the setup into a 27-armed bandit problem, with each arm corresponding to a genre and the users serving as dynamic environments. An ensemble of 100 virtual users, reflecting proportions observed in the dataset, was constructed. Each algorithm was run on this ensemble for 10,000 steps, analyzing performance and stability through a total cumulative reward and rolling window average. 
+
+## Results
+
+The performance of the Dirichlet Forest Sampling algorithm was benchmarked against several other bandit and deep reinforcement learning strategies using a subset of the Netflix Prize Data (~8 million datapoints). The results are summarized in the following rankings based on average rewards:
+
+1. **Dirichlet Forest Sampling** - 4.17
+2. **LinUCB** - 4.16
+3. **ε-greedy** - 4.07
+4. **ε-first** - 4.00
+5. **ε-decreasing** - 3.93
+6. **Advantage Actor-Critic** - 3.92
+7. **Deep Q-Network** - 3.91
+8. **A/B Testing** - 3.81
+
+![Performance Comparison](./images/performances.png)
+
+As shown in the plots above, strategies like A/B testing and ε-first show random behavior initially, stabilizing only after their exploration phases end. Both deep reinforcement learning methods, while capable of identifying effective strategies, exhibit slower convergence and fail to consistently find the optimal strategy for different users. ε-greedy quickly identifies a good strategy but is eventually surpassed by ε-first due to its more extensive initial exploration. LinUCB performs well, but **Dirichlet Forest Sampling demonstrates the best performance**, converging to the optimal strategy faster than LinUCB in the rolling window analysis and maintaining a consistently higher average reward at each timestep. This demostrates the effectiveness of integrating a random forest classifier and a nonlinear update mechanism, making Dirichlet Forest Sampling the most efficient and reliable algorithm in this benchmark.
 
 ## Works Cited
 
