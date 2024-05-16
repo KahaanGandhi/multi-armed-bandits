@@ -1,8 +1,11 @@
 I propose a new algorithm, "Dirichlet Forest Sampling," building on previous work for bounded reward distributions without the computational burden of optimization at each step. This algorithm uses a scikit-learn random forest classifier and a nonlinear update mechanism to Dirichlet parameters, sampling to approximate the estimated value. It excels in scenarios with general user tendencies but no specific context, making it ideal for cold-start content recommendations. Using Netflix Prize Data, I model user rating tendencies in a 27-armed bandit scenario. Benchmarking against traditional bandits (e.g., LinUCB, $\epsilon$-greedy) and PyTorch-based methods (e.g., Deep Q-Learning, Advantage Actor-Critic), I demonstrate faster convergence and maximized cumulative rewards.
 
+
+To run it yourself, select simulation parameters and run `src/driver.py`. Ensure you have the necessary packages installed by referencing `requirements.txt`. The source code for the different bandit algorithms is in `src/agents.py`.
+
 ## Multi-Armed Bandit Problems
 
-The Multi-Armed Bandit (MAB) problem, a one-state Markov decision process, is a powerful framework in decision theory and reinforcement learning. It describes an agent choosing among multiple options ("arms") in a series of trials to maximize cumulative reward. Focusing on stochastic and stationary reward distributions, each arm provides a random reward from a constant distribution. The agent's goal is to identify the arm with the highest expected reward, balancing exploration (trying different arms) and exploitation (choosing the best-known arm). Too much exploration wastes time on suboptimal arms, while too much exploitation can miss better options. Optimizing total reward requires balancing these strategies effectively.
+The Multi-Armed Bandit (MAB) problem, a one-state Markov decision process, is a powerful framework in decision theory and reinforcement learning (RL). It describes an agent choosing among multiple options ("arms") in a series of trials to maximize cumulative reward. Focusing on stochastic and stationary reward distributions, each arm provides a random reward from a constant distribution. The agent's goal is to identify the arm with the highest expected reward, balancing exploration (trying different arms) and exploitation (choosing the best-known arm). Too much exploration wastes time on suboptimal arms, while too much exploitation can miss better options. Optimizing total reward requires balancing these strategies effectively.
 
 MAB strategies are widely used across industries to optimize decisions under uncertainty and address the cold start problem, where traditional machine learning and collaborative filtering methods struggle due to insufficient data or context for accurate predictions. In content recommendation systems like Spotify's, MAB algorithms dynamically select genres and songs based on real-time user interactions [[1](https://research.atspotify.com/publications/explore-exploit-explain-personalizing-explainable-recommendations-with-bandits/)]. In online advertising, companies like Facebook use MAB algorithms to optimize ad selection with limited initial data [[2](https://dl.acm.org/doi/abs/10.1145/3442381.3450074)]. Yahoo uses MAB algorithms to test headlines for user engagement [[3](https://arxiv.org/abs/1908.06256)]..
 
@@ -10,7 +13,7 @@ Formalizing the $K$-armed bandit problem, let $K \in \mathbb{N}^+$ be the number
 
 ## Existing Bandit Algorithms
 
-There are many existing bandit algorithms and deep reinforcement learning algorithms that can be applied to MAB problems. 
+There are many existing bandit algorithms and deep RL algorithms that can be applied to MAB problems. 
 - **$\epsilon$-First:** Begins with a pure exploration phase, selecting arms randomly for a fixed number of initial trials ($\epsilon$), before switching to a pure exploitation phase, repeatedly selecting the best-known arm.
 - **$\epsilon$-Greedy:** Balances exploration and exploitation by choosing a random arm with a probability of $\epsilon$ and the best-known arm with a probability of $(1−\epsilon)$ [[4]](https://link.springer.com/article/10.1023/A:1013689704352).
 - **$\epsilon$-Decreasing:** Starts with a high exploration rate that decreases over time, allowing for more exploitation in later trials.
@@ -28,9 +31,9 @@ I extend this concept by integrating a random forest classifier to further adjus
 
 ![Dirichlet Forest Sampling Pseudocode](./images/pseudocode.png)
 
-## Experimental Setup
+## Data Mining for User Profiles
 
-To benchmark the Dirichlet Forest Sampling algorithm against other bandit and deep reinforcement learning strategies, I cleaned and processed a subset of the [Netflix Prize Data](https://www.kaggle.com/datasets/netflix-inc/netflix-prize-data) to model user rating tendencies within a framework that lacks specific user data but leverages broader user preferences. The users were categorized into five distinct profiles based on their rating patterns:
+To benchmark the Dirichlet Forest Sampling algorithm against other bandit and deep RL strategies, I cleaned and processed a subset of the [Netflix Prize Data](https://www.kaggle.com/datasets/netflix-inc/netflix-prize-data) (~8 million datapoints) to model user rating tendencies within a framework that lacks specific user data but leverages broader user preferences. The users were categorized into five distinct profiles based on their rating patterns:
 1. **Average Viewers**: Users with average ratings across genres.
 2. **Genre Enjoyers**: Users with high ratings for a single genre.
 3. **Multiple Genre Enjoyers**: Users who favor multiple genres.
@@ -39,13 +42,12 @@ To benchmark the Dirichlet Forest Sampling algorithm against other bandit and de
 
 This transformed the setup into a 27-armed bandit problem, with each arm corresponding to a genre and the users serving as dynamic environments. An ensemble of 100 virtual users, reflecting proportions observed in the dataset, was constructed. Each algorithm was run on this ensemble for 10,000 steps, analyzing performance and stability through a total cumulative reward and rolling window average. 
 
-## Results
+## Comparing Agent Performances
 
-The performance of the Dirichlet Forest Sampling algorithm was benchmarked against several other bandit and deep reinforcement learning strategies using a subset of the Netflix Prize Data (~8 million datapoints). The results are summarized in the following rankings based on average rewards:
-
-1. **Dirichlet Forest Sampling** - 4.17
-2. **LinUCB** - 4.16
-3. **ε-greedy** - 4.07
+The Dirichlet Forest Sampling algorithm was benchmarked against other strategies, with the results summarized in the following rankings based on average rewards:
+1. 🥇 **Dirichlet Forest Sampling** - 4.17
+2. 🥈 **LinUCB** - 4.16
+3. 🥉 **ε-greedy** - 4.07
 4. **ε-first** - 4.00
 5. **ε-decreasing** - 3.93
 6. **Advantage Actor-Critic** - 3.92
@@ -54,7 +56,7 @@ The performance of the Dirichlet Forest Sampling algorithm was benchmarked again
 
 ![Performance Comparison](./images/performances.png)
 
-As shown in the plots above, strategies like A/B testing and ε-first show random behavior initially, stabilizing only after their exploration phases end. Both deep reinforcement learning methods, while capable of identifying effective strategies, exhibit slower convergence and fail to consistently find the optimal strategy for different users. ε-greedy quickly identifies a good strategy but is eventually surpassed by ε-first due to its more extensive initial exploration. LinUCB performs well, but **Dirichlet Forest Sampling demonstrates the best performance**, converging to the optimal strategy faster than LinUCB in the rolling window analysis and maintaining a consistently higher average reward at each timestep. This demostrates the effectiveness of integrating a random forest classifier and a nonlinear update mechanism, making Dirichlet Forest Sampling the most efficient and reliable algorithm in this benchmark.
+Strategies like A/B testing and ε-first show random behavior initially, stabilizing only after their exploration phases end. Both deep RL methods, while capable of identifying effective strategies, exhibit slower convergence and fail to consistently find the optimal strategy for different users. ε-greedy quickly identifies a good strategy but is eventually surpassed by ε-first due to its more extensive initial exploration. LinUCB performs well, but ***Dirichlet Forest Sampling demonstrates the best performance***, converging to the optimal strategy faster than LinUCB in the rolling window analysis and maintaining a consistently higher average reward at each timestep. This demonstrates the effectiveness of integrating a random forest classifier and a nonlinear update mechanism, making Dirichlet Forest Sampling the most efficient and reliable algorithm in this benchmark.
 
 ## Works Cited
 

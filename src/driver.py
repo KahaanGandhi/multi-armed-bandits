@@ -19,8 +19,8 @@ except AssertionError:
 #-----------------------------------#
 
 np.random.seed(747)
-N = 10000
-total_users = 100
+N = 10000           # Horizon T≥1 (total timesteps)
+total_users = 100   # ≥10 is recommended
 
 #----------------------------------------------------#
 # Enviornment helper functions: setup and simulation
