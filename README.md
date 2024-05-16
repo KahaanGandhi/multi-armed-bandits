@@ -5,7 +5,7 @@ To run it yourself, select simulation parameters and run `src/driver.py`. Ensure
 
 ## Multi-Armed Bandit Problems
 
-The Multi-Armed Bandit (MAB) problem, a one-state Markov decision process, is a powerful framework in decision theory and reinforcement learning (RL). It describes an agent choosing among multiple options ("arms") in a series of trials to maximize cumulative reward. Focusing on stochastic and stationary reward distributions, each arm provides a random reward from a constant distribution. The agent's goal is to identify the arm with the highest expected reward, balancing exploration (trying different arms) and exploitation (choosing the best-known arm). Too much exploration wastes time on suboptimal arms, while too much exploitation can miss better options. Optimizing total reward requires balancing these strategies effectively.
+The Multi-Armed Bandit (MAB) problem, a one-state Markov decision process, is a powerful framework in decision theory and reinforcement learning (RL). It describes an agent choosing among multiple options ("arms") in a series of trials to maximize cumulative reward. Focusing on stochastic and stationary reward distributions, each arm provides a random reward from a time-invariant distribution. The agent's goal is to identify the arm with the highest expected reward, balancing exploration (trying different arms) and exploitation (choosing the best-known arm). Too much exploration wastes time on suboptimal arms, while too much exploitation can miss better options. Optimizing total reward requires balancing these strategies effectively.
 
 MAB strategies are widely used across industries to optimize decisions under uncertainty and address the cold start problem, where traditional machine learning and collaborative filtering methods struggle due to insufficient data or context for accurate predictions. In content recommendation systems like Spotify's, MAB algorithms dynamically select genres and songs based on real-time user interactions [[1](https://research.atspotify.com/publications/explore-exploit-explain-personalizing-explainable-recommendations-with-bandits/)]. In online advertising, companies like Facebook use MAB algorithms to optimize ad selection with limited initial data [[2](https://dl.acm.org/doi/abs/10.1145/3442381.3450074)]. Yahoo uses MAB algorithms to test headlines for user engagement [[3](https://arxiv.org/abs/1908.06256)]..
 
@@ -25,7 +25,7 @@ There are many existing bandit algorithms and deep RL algorithms that can be app
 
 ## Improved Dirichlet Sampling with Random Forests
 
-Existing algorithms for bounded reward distributions are either suboptimal or require solving an optimization problem at each step [[7](http://proceedings.mlr.press/v19/garivier11a/garivier11a.pdf)]. Dirichlet parameters have been proposed as an extension of Thompson Sampling for Bernoulli rewards to bounded multinomial reward distributions, addressing the need for quick online decision-making without the computational burden of constant optimization [[8](https://proceedings.mlr.press/v117/riou20a.html)]. Dirichlet parameters represent the probabilities associated with each possible reward level for each arm, allowing for efficient sampling and updating of beliefs. 
+Existing algorithms for bounded reward distributions are either suboptimal or require solving an optimization problem at each step [[7](http://proceedings.mlr.press/v19/garivier11a/garivier11a.pdf)]. Dirichlet parameters have been proposed as an extension of Thompson Sampling for Bernoulli rewards to bounded multinomial reward distributions [[8](https://arxiv.org/abs/2111.09724)], addressing the need for quick online decision-making without the computational burden of constant optimization [[9](https://proceedings.mlr.press/v117/riou20a.html)]. Dirichlet parameters represent the probabilities associated with each possible reward level for each arm, allowing for efficient sampling and updating of beliefs. 
 
 I extend this concept by integrating a random forest classifier to further adjust Dirichlet parameters based on observed performance in contexts where we ***lack specific user data but know general tendencies*** (e.g., users being biased towards favorite genres). Specifically, in Netflix genre recommendations, it accelerates convergence to the optimal strategy, maximizing cumulative rewards more efficiently than traditional algorithms. My algorithm, Dirichlet Forest Sampling, also applies a nonlinear update to the Dirichlet parameters, fitted to a reward of 1 for a value of 1 and 2 for a value of 5.
 
@@ -73,8 +73,10 @@ Strategies like A/B testing and ε-first show random behavior initially, stabili
 6. **Thompson, W. R. (1933).** *On the likelihood that one unknown probability exceeds another in view of the evidence of two samples.* Biometrika, 25(3/4), 285-294.
 
 7. **Garivier, A., & Cappé, O. (2011).** *The KL-UCB Algorithm for Bounded Stochastic Bandits and Beyond.* Conference On Learning Theory, 24, 359-376.
+   
+8. **Baudry, D., Saux, P., & Maillard, O.-A. (2021).** *From Optimality to Robustness: Dirichlet Sampling Strategies in Stochastic Bandits*, NeurIPS 2021, Sydney, Australia.
 
-8. **Riou, C., & Honda, J. (2020).** *Bandit Algorithms Based on Thompson Sampling for Bounded Reward Distributions.* Proceedings of the 31st International Conference on Algorithmic Learning Theory, PMLR 117:777-826.
+9. **Riou, C., & Honda, J. (2020).** *Bandit Algorithms Based on Thompson Sampling for Bounded Reward Distributions.* Proceedings of the 31st International Conference on Algorithmic Learning Theory, PMLR 117:777-826.
 
 
 
