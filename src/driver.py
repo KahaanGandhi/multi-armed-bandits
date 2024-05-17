@@ -73,10 +73,10 @@ agents = {
     'Dirichlet Forest Sampling': DirichletForestSampling,
     'Deep Q-Network': DeepQNetwork,
     'Advantage Actor-Critic':AdvantageActorCritic,
+    'LinUCB': LinUCB,
     'ε-first': EpsilonFirst,
     'ε-greedy': EpsilonGreedy,
     'ε-decreasing': EpsilonDecreasing,
-    'LinUCB': LinUCB,
     'A/B Testing': ABTesting,
 }
 
@@ -104,17 +104,25 @@ progress_bar.close()
 #-------------------------------#
 
 # Plot settings
+dark_background = '#0D1117'
+text_color = '#C9D1D9'
+
 plt.rcParams.update(plt.rcParamsDefault)
-plt.rcParams['axes.facecolor'] = 'white'
-plt.rcParams['figure.facecolor'] = 'white'
-plt.rcParams['grid.color'] = '#cccccc'
+plt.rcParams['axes.facecolor'] = dark_background
+plt.rcParams['figure.facecolor'] = dark_background
+plt.rcParams['grid.color'] = '#444444'
 plt.rcParams['grid.linestyle'] = '--'
 plt.rcParams['grid.linewidth'] = 0.5
 plt.rcParams['axes.grid'] = True
+plt.rcParams['text.color'] = text_color
+plt.rcParams['axes.labelcolor'] = text_color
+plt.rcParams['xtick.color'] = text_color
+plt.rcParams['ytick.color'] = text_color
 
 # cmap = plt.get_cmap('gnuplot')
 # colors = [cmap(i) for i in np.linspace(0, 1, len(agents))]
-colors = ["#000000", "#7c1158", "#4421af", "#1a53ff", "#0d88e6", "#00b7c7", "#6cc644", "#228b22"]
+# colors = ["#000000", "#7c1158", "#4421af", "#1a53ff", "#0d88e6", "#00b7c7", "#6cc644", "#228b22"]  # White BG
+colors = ["#ffbf00", "#ffa600", "#ff764a", "#ef5675", "#bc5090", "#7a5195", "#374c80", "#003f5c"]
 
 
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 7))

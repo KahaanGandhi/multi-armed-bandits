@@ -56,7 +56,7 @@ The Dirichlet Forest Sampling algorithm was benchmarked against other strategies
 
 ![Performance Comparison](./images/performances.png)
 
-Strategies like A/B testing and ε-first show random behavior initially, stabilizing only after their exploration phases end. Both deep RL methods, while capable of identifying effective strategies, exhibit slower convergence and fail to consistently find the optimal strategy for different users. ε-greedy quickly identifies a good strategy but is eventually surpassed by ε-first due to its more extensive initial exploration. LinUCB performs well, but ***Dirichlet Forest Sampling demonstrates the best performance***, converging to the optimal strategy faster than LinUCB in the rolling window analysis and maintaining a consistently higher average reward at each timestep. This demonstrates the effectiveness of integrating a random forest classifier and a nonlinear update mechanism, making Dirichlet Forest Sampling the most efficient and reliable algorithm in this benchmark.
+Strategies like A/B testing and ε-first show random behavior initially, stabilizing only after their exploration phases end. Both deep RL methods, while capable of identifying effective strategies, exhibit slower convergence and fail to consistently find the optimal strategy for different users. ε-greedy quickly identifies a good strategy but is eventually surpassed by ε-first due to its more extensive initial exploration. LinUCB performs well, but ***Dirichlet Forest Sampling demonstrates the best performance***, converging to the optimal strategy faster than LinUCB in the rolling window analysis and maintaining a consistently higher average reward at each timestep. 
 
 ## Works Cited
 
