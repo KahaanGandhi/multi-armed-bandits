@@ -54,7 +54,7 @@ The Dirichlet Forest Sampling algorithm was benchmarked against other strategies
 7. **Deep Q-Network** - 3.91
 8. **A/B Testing** - 3.81
 
-![Performance Comparison](./images/performances.png)
+<img src="./images/performances.png" alt="Performance Comparison" style="width:100%;">
 
 Strategies like A/B testing and ε-first show random behavior initially, stabilizing only after their exploration phases end. Both deep RL methods, while capable of identifying effective strategies, exhibit slower convergence and fail to consistently find the optimal strategy for different users. ε-greedy quickly identifies a good strategy but is eventually surpassed by ε-first due to its more extensive initial exploration. LinUCB performs well, but ***Dirichlet Forest Sampling demonstrates the best performance***, converging to the optimal strategy faster than LinUCB in the rolling window analysis and maintaining a consistently higher average reward at each timestep. 
 
