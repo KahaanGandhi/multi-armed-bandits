@@ -45,7 +45,7 @@ class DirichletForestSampling:
                 expected_rewards = [np.dot(probs, np.arange(1, 6)) for probs in sampled_probs]     # calculate EV...
                 chosen_arm = np.argmax(expected_rewards)                                           # and chose arm w/ highest EV
                 
-                reward = self.environment.get_reward(chosen_arm)  # 
+                reward = self.environment.get_reward(chosen_arm)
                 rewards.append(reward)
                 self.arm_history[chosen_arm].append(reward)
 
