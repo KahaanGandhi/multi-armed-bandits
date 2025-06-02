@@ -4,7 +4,7 @@ To run it yourself, select simulation parameters and run `src/driver.py`. Ensure
 
 ## Multi-Armed Bandit Problems
 
-The Multi-Armed Bandit (MAB) problem is a one-state Markov decision process that models decision-making under uncertainty. It involves an agent repeatedly choosing from several options ("arms"), each providing a random reward drawn from a stationary distribution. The objective is to maximize cumulative reward by balancing exploration (trying different arms) and exploitation (selecting the arm with the highest expected reward). Too much exploration wastes time on suboptimal arms, while too much exploitation can miss better options.
+The Multi-Armed Bandit (MAB) problem is a one-state Markov decision process that models decision-making under uncertainty. It involves an agent repeatedly choosing from several options ("arms"), each of which provides a random reward drawn from a stationary distribution. The objective is to maximize cumulative reward by balancing exploration (trying different arms) and exploitation (selecting the arm with the highest expected reward). Too much exploration wastes time on suboptimal arms, while too much exploitation can miss better options.
 
 MAB strategies are widely used to optimize decisions under uncertainty and address the cold start problem, where traditional machine learning and collaborative filtering methods struggle due to insufficient data or context for accurate predictions. For example, MAB strategies have been applied to dynamically select genres and songs in content recommendations (Spotify) [[1](https://research.atspotify.com/publications/explore-exploit-explain-personalizing-explainable-recommendations-with-bandits/)], optimize ad selection with limited data in online advertising (Facebook) [[2](https://dl.acm.org/doi/abs/10.1145/3442381.3450074)], and test headlines for user engagement (Yahoo) [[3](https://arxiv.org/abs/1908.06256)].  
 
@@ -18,15 +18,14 @@ There are many existing bandit algorithms and deep RL algorithms that can be app
 - **$\epsilon$-decreasing:** Starts with a high exploration rate that decreases over time, allowing for more exploitation in later trials.
 - **LinUCB:** Uses a linear model to estimate rewards based on contextual information and selects the arm with the highest upper confidence bound on the estimated reward [[5]](https://dl.acm.org/doi/10.1145/1772690.1772758).
 - **Thompson Sampling:** A Bayesian algorithm that models each arm's reward with a probability distribution, sampling from these distributions to decide which arm to pull, favoring arms with higher uncertainty [[6]](https://www.jstor.org/stable/2332286).
-- **Advantage Actor-Critic (A2C):** Uses separate models for the policy (actor) and value function (critic), balancing immediate rewards and long-term value through stable learning.
 - **Deep Q-Learning:** Uses deep neural networks to approximate Q-values (the expected reward of taking an action in a given state) and uses these approximations to guide action selection.
-
+- **Advantage Actor-Critic (A2C):** Uses separate models for the policy (actor) and value function (critic), balancing immediate rewards and long-term value through stable learning.
 
 ## Improved Dirichlet Sampling with Random Forests
 
 Existing algorithms for bounded reward distributions are either suboptimal or require solving an optimization problem at each step [[7](http://proceedings.mlr.press/v19/garivier11a/garivier11a.pdf)]. Dirichlet parameters have been proposed as an extension of Thompson Sampling for Bernoulli rewards to bounded multinomial reward distributions [[8](https://arxiv.org/abs/2111.09724)], addressing the need for quick online decision-making without the computational burden of constant optimization [[9](https://proceedings.mlr.press/v117/riou20a.html)]. 
 
-Extending this concept, Dirichlet Forest Sampling integrates a random forest classifier to adjust Dirichlet parameters based on observed performance in scenarios where specific user data is sparse, yet general user tendencies (e.g., genre biases) are apparent. In the context of Netflix genre recommendations, this approach accelerates convergence toward the optimal strategy. Additionally, the algorithm applies a nonlinear update to the Dirichlet parameters, calibrated to the reward scale.
+Extending this concept, Dirichlet Forest Sampling integrates a random forest classifier to adjust Dirichlet parameters based on observed performance in scenarios where specific user data is sparse, yet general user tendencies (e.g., genre biases) are known. The algorithm applies a nonlinear update to the Dirichlet parameters, calibrated to the reward scale.
 
 ![Dirichlet Forest Sampling Pseudocode](./images/pseudocode.png)
 
